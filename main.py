@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from utils.utils import check_fields, print_progress, AverageMeter, accuracy, save_checkpoint
+from utils.utils import check_fields, print_progress, AverageMeter, accuracy, save_checkpoint, load_checkpoint
 from utils.dataloader import load_data
 from models.classifier import RNNTextClassifier
 
@@ -125,6 +125,31 @@ def validate(val_loader, model, criterion, print_freq):
     return top1.avg
 
 
+def decode(decode_iter, model, output_dir):
+    model.eval()
+    output_file = open(os.path.join(output_dir, 'result.csv'), 'w')
+    with torch.no_grad():
+        for decode_item in decode_iter:
+            text, lengths = decode_item.comment_text
+            text.transpose_(0, 1)
+            sort_idx = np.argsort(-lengths)
+            unsort_idx = np.argsort(sort_idx)
+
+            text = text[sort_idx, :]
+            lengths = lengths[sort_idx]
+
+            if torch.cuda.is_available():
+                text = text.cuda()
+
+            output = model(text, lengths)
+            _, pred = output.max(1)
+
+            # return to origin order
+            pred = pred[unsort_idx]
+            for label in pred:
+                output_file.write('%d\n' % label.item())
+    output_file.close()
+
 if __name__ == '__main__':
     args = arg_parser.parse_args()
     config_file = args.config
@@ -149,16 +174,25 @@ if __name__ == '__main__':
         if file_type:
             if file_type == 'csv':
                 if is_train:
+                    # training
                     required_fields = ['train_file', 'text_column', 'label_column', 'batch_size']
                     check_fields(required_fields, IO_session)
                     train_iter, test_iter, TEXT = load_data(file_type, IO_session, is_train=is_train)
                     vocab = TEXT.vocab
+                    # save vocab
+                    output_dir = IO_session.get('output_dir', 'output')
+                    if not os.path.exists(output_dir):
+                        os.makedirs(output_dir)
+                    pickle.dump(vocab, open(os.path.join(output_dir, 'vocab.cache'), 'wb'))
+                else:
+                    # decoding
+                    required_fields = ['decode_file', 'text_column', 'vocab_file', 'batch_size']
+                    output_dir = IO_session.get('output_dir', 'output')
+                    check_fields(required_fields, IO_session)
+                    decode_iter, TEXT = load_data(file_type, IO_session, is_train=is_train)
+                    vocab = TEXT.vocab
         else:
             raise Exception('file format should be configured in IO session')
-        output_dir = IO_session.get('output_dir', 'output')
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        pickle.dump(vocab, open(os.path.join(output_dir, 'vocab.cache'), 'wb'))
         # print('%d train samples and %d test samples' % (len(train_dataset), len(test_dataset)))
         print_progress("IO config Done")
     else:
@@ -176,6 +210,10 @@ if __name__ == '__main__':
             model = RNNTextClassifier(vocab, MODEL_session)
         if torch.cuda.is_available():
             model = model.cuda()
+        if not is_train:
+            required_fields = ['checkpoint']
+            check_fields(required_fields, MODEL_session)
+            load_checkpoint(model, MODEL_session['checkpoint'])
         print(model)
         print_progress("Model config Done")
     else:
@@ -202,11 +240,12 @@ if __name__ == '__main__':
     else:
         if 'DECODE' in sessions:
             print_progress('Start DECODE config')
+            required_fields = ['use_gpu']
         else:
             raise Exception('DECODE should be configured in config file')
 
-    best_acc1 = 0
     if is_train:
+        best_acc1 = 0
         for epoch in range(n_epoch):
             train(train_iter, model, criterion, optimizer, epoch, record_step)
 
@@ -220,3 +259,5 @@ if __name__ == '__main__':
                 'best_acc1': best_acc1,
                 'optimizer': optimizer.state_dict()
             }, is_best, output_dir)
+    else:
+        decode(decode_iter, model, output_dir)

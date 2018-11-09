@@ -47,6 +47,17 @@ def save_checkpoint(state, is_best, path, filename='checkpoint.pth.tar'):
         shutil.copyfile(filename, best_model)
 
 
+def load_checkpoint(model, checkpoint_path):
+    if os.path.isfile(checkpoint_path):
+        print("=> loading checkpoint '{}'".format(checkpoint_path))
+        checkpoint = torch.load(checkpoint_path)
+        model.load_state_dict(checkpoint['state_dict'])
+        print("=> loaded checkpoint '{}' (epoch {})"
+              .format(checkpoint_path, checkpoint['epoch']))
+    else:
+        print("=> no checkpoint found at '{}'".format(checkpoint_path))
+
+
 def check_fields(required_fields, session):
     for field in required_fields:
         if field not in session:

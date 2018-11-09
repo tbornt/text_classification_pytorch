@@ -1,4 +1,5 @@
 import re
+import pickle
 
 import pandas as pd
 from torchtext import data
@@ -87,7 +88,7 @@ def load_csv_data(session, kwargs):
         TEXT.build_vocab(train_dataset, test_dataset)
         TEXT.vocab.load_vectors('glove.6B.100d')
         train_iter = data.BucketIterator(train_dataset,
-                                         shuffle=False,
+                                         shuffle=True,
                                          batch_size=batch_size,
                                          repeat=False)
         test_iter = data.BucketIterator(test_dataset,
@@ -95,3 +96,19 @@ def load_csv_data(session, kwargs):
                                         batch_size=batch_size,
                                         repeat=False)
         return train_iter, test_iter, TEXT
+    else:
+        decode_file = session['decode_file']
+        vocab_file = session['vocab_file']
+        text_column = session['text_column']
+        batch_size = int(session['batch_size'])
+
+        vocab = pickle.load(open(vocab_file, 'rb'))
+        TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, include_lengths=True)
+        TEXT.vocab = vocab
+        decode_df = pd.read_csv(decode_file, usecols=[text_column])
+        decode_dataset = DataFrameDataset(decode_df, fields={text_column: TEXT})
+        decode_iter = data.BucketIterator(decode_dataset,
+                                         shuffle=False,
+                                         batch_size=batch_size,
+                                         repeat=False)
+        return decode_iter, TEXT
