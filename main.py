@@ -55,7 +55,7 @@ def validate(val_loader, model, criterion):
                 label = label.cuda()
 
             # compute output
-            output = model(text)
+            output = model(text, lengths)
             loss = criterion(output, label)
 
             # measure accuracy and record loss
@@ -181,4 +181,4 @@ if __name__ == '__main__':
                     print('current batch loss: %f' % batch_loss)
             print('epoch%d loss: %f' % (epoch, running_loss/i))
 
-        validate(test_iter, model, criterion)
+            validate(test_iter, model, criterion)
