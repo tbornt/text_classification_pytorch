@@ -139,6 +139,10 @@ if __name__ == '__main__':
                 lengths = lengths[sort_idx]
                 label = label[sort_idx]
 
+                if torch.cuda.is_available():
+                    text = text.cuda()
+                    label = label.cuda()
+
                 output = model(text, lengths)
                 _, pred_label = torch.topk(output, 1)
                 label = label.view(len(label), -1)
