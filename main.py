@@ -125,9 +125,9 @@ def validate(val_loader, model, criterion, print_freq):
     return top1.avg
 
 
-def decode(decode_iter, model, output_dir):
+def decode(decode_iter, model, output_file):
     model.eval()
-    output_file = open(os.path.join(output_dir, 'result.csv'), 'w')
+    output_file = open(output_file, 'w')
     with torch.no_grad():
         for decode_item in decode_iter:
             text, lengths = decode_item.comment_text
@@ -187,7 +187,7 @@ if __name__ == '__main__':
                 else:
                     # decoding
                     required_fields = ['decode_file', 'text_column', 'vocab_file', 'batch_size']
-                    output_dir = IO_session.get('output_dir', 'output')
+                    output_file = IO_session.get('output_file', 'output/output.csv')
                     check_fields(required_fields, IO_session)
                     decode_iter, TEXT = load_data(file_type, IO_session, is_train=is_train)
                     vocab = TEXT.vocab
@@ -260,4 +260,4 @@ if __name__ == '__main__':
                 'optimizer': optimizer.state_dict()
             }, is_best, output_dir)
     else:
-        decode(decode_iter, model, output_dir)
+        decode(decode_iter, model, output_file)
