@@ -19,7 +19,7 @@ arg_parser.add_argument('-c', '--config', required=True, help='config file')
 config_parser = configparser.ConfigParser()
 
 
-def train(train_loader, model, criterion, optimizer, epoch, print_freq):
+def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_column, label_column):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -34,9 +34,9 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq):
         # measure data loading time
         data_time.update(time.time() - end)
 
-        text, lengths = train_item.comment_text
+        text, lengths = getattr(train_item, text_column)
         text.transpose_(0, 1)
-        label = train_item.toxic
+        label = getattr(train_item, label_column)
         sort_idx = np.argsort(-lengths)
 
         text = text[sort_idx, :]
@@ -76,7 +76,7 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq):
         i += 1
 
 
-def validate(val_loader, model, criterion, print_freq):
+def validate(val_loader, model, criterion, print_freq, text_column, label_column):
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
@@ -88,9 +88,9 @@ def validate(val_loader, model, criterion, print_freq):
         end = time.time()
         i = 0
         for test_item in val_loader:
-            text, lengths = test_item.comment_text
+            text, lengths = getattr(test_item, text_column)
             text.transpose_(0, 1)
-            label = test_item.toxic
+            label = getattr(test_item, label_column)
             sort_idx = np.argsort(-lengths)
 
             text = text[sort_idx, :]
@@ -125,12 +125,12 @@ def validate(val_loader, model, criterion, print_freq):
     return top1.avg
 
 
-def decode(decode_iter, model, output_file):
+def decode(decode_iter, model, output_file, text_column):
     model.eval()
     output_file = open(output_file, 'w')
     with torch.no_grad():
         for decode_item in decode_iter:
-            text, lengths = decode_item.comment_text
+            text, lengths = getattr(decode_item, text_column)
             text.transpose_(0, 1)
             sort_idx = np.argsort(-lengths)
             unsort_idx = np.argsort(sort_idx)
@@ -177,6 +177,8 @@ if __name__ == '__main__':
                     # training
                     required_fields = ['train_file', 'text_column', 'label_column', 'batch_size']
                     check_fields(required_fields, IO_session)
+                    text_column = IO_session['text_column']
+                    label_column = IO_session['label_column']
                     train_iter, test_iter, TEXT = load_data(file_type, IO_session, is_train=is_train)
                     vocab = TEXT.vocab
                     # save vocab
@@ -187,8 +189,9 @@ if __name__ == '__main__':
                 else:
                     # decoding
                     required_fields = ['decode_file', 'text_column', 'vocab_file', 'batch_size']
-                    output_file = IO_session.get('output_file', 'output/output.csv')
                     check_fields(required_fields, IO_session)
+                    text_column = IO_session['text_column']
+                    output_file = IO_session.get('output_file', 'output/output.csv')
                     decode_iter, TEXT = load_data(file_type, IO_session, is_train=is_train)
                     vocab = TEXT.vocab
         else:
@@ -247,9 +250,9 @@ if __name__ == '__main__':
     if is_train:
         best_acc1 = 0
         for epoch in range(n_epoch):
-            train(train_iter, model, criterion, optimizer, epoch, record_step)
+            train(train_iter, model, criterion, optimizer, epoch, record_step, text_column, label_column)
 
-            acc1 = validate(test_iter, model, criterion, record_step)
+            acc1 = validate(test_iter, model, criterion, record_step, text_column, label_column)
             is_best = acc1 > best_acc1
 
             best_acc1 = max(acc1, best_acc1)
@@ -260,4 +263,4 @@ if __name__ == '__main__':
                 'optimizer': optimizer.state_dict()
             }, is_best, output_dir)
     else:
-        decode(decode_iter, model, output_file)
+        decode(decode_iter, model, output_file, text_column)
