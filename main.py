@@ -33,7 +33,6 @@ def validate(val_loader, model, criterion):
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
-    top5 = AverageMeter()
 
     # switch to evaluate mode
     model.eval()
@@ -59,10 +58,9 @@ def validate(val_loader, model, criterion):
             loss = criterion(output, label)
 
             # measure accuracy and record loss
-            acc1, acc5 = accuracy(output, label, topk=(1, ))
+            acc1 = accuracy(output, label, topk=(1, ))
             losses.update(loss.item(), input.size(0))
             top1.update(acc1[0], input.size(0))
-            top5.update(acc5[0], input.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
