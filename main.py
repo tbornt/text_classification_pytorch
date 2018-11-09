@@ -18,15 +18,61 @@ arg_parser.add_argument('-c', '--config', required=True, help='config file')
 config_parser = configparser.ConfigParser()
 
 
-def train(model, text, label, loss_func, opt, running_loss):
-    opt.zero_grad()
-    output = model(text, lengths)
-    loss = loss_func(output, label)
-    batch_loss = loss.data.item()
-    running_loss += batch_loss
-    loss.backward()
-    opt.step()
-    return batch_loss, running_loss
+def train(train_loader, model, criterion, optimizer, epoch, print_freq):
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    losses = AverageMeter()
+    top1 = AverageMeter()
+
+    # switch to train mode
+    model.train()
+
+    end = time.time()
+    i = 0
+    for train_item in train_loader:
+        # measure data loading time
+        data_time.update(time.time() - end)
+
+        text, lengths = train_item.comment_text
+        text.transpose_(0, 1)
+        label = train_item.toxic
+        sort_idx = np.argsort(-lengths)
+
+        text = text[sort_idx, :]
+        lengths = lengths[sort_idx]
+        label = label[sort_idx]
+
+        if torch.cuda.is_available():
+            text = text.cuda()
+            label = label.cuda()
+
+        # compute output
+        output = model(text, lengths)
+        loss = criterion(output, label)
+
+        # measure accuracy and record loss
+        acc1 = accuracy(output, label, topk=(1,))
+        losses.update(loss.item(), text.size(0))
+        top1.update(acc1[0].item(), text.size(0))
+
+        # compute gradient and do SGD step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        if i % print_freq == 0:
+            print('Epoch: [{0}][{1}/{2}]\t'
+                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  'Acc@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
+                   epoch, i, len(train_loader), batch_time=batch_time,
+                   data_time=data_time, loss=losses, top1=top1))
+        i += 1
 
 
 def validate(val_loader, model, criterion, print_freq):
@@ -140,7 +186,7 @@ if __name__ == '__main__':
             n_epoch = int(TRAIN_session['n_epoch'])
             lr = float(TRAIN_session['learning_rate'])
             record_step = int(TRAIN_session.get('record_step', 100))
-            opt = optim.Adam(model.parameters(), lr=lr)
+            optimizer = optim.Adam(model.parameters(), lr=lr)
             if torch.cuda.is_available():
                 criterion = nn.CrossEntropyLoss().cuda()
             else:
@@ -155,27 +201,6 @@ if __name__ == '__main__':
 
     if is_train:
         for epoch in range(n_epoch):
-            model.train()
-            running_loss = 0.0
-            i = 0
-            for train_item in train_iter:
-                i += 1
-                text, lengths = train_item.comment_text
-                text.transpose_(0, 1)
-                label = train_item.toxic
-                sort_idx = np.argsort(-lengths)
+            train(train_iter, model, criterion, optimizer, epoch, record_step)
 
-                text = text[sort_idx, :]
-                lengths = lengths[sort_idx]
-                label = label[sort_idx]
-
-                if torch.cuda.is_available():
-                    text = text.cuda()
-                    label = label.cuda()
-
-                batch_loss, running_loss = train(model, text, label, criterion, opt, running_loss)
-                if i % record_step == 0:
-                    print('current batch loss: %f' % batch_loss)
-            print('epoch%d loss: %f' % (epoch, running_loss/i))
-
-            validate(test_iter, model, criterion, record_step)
+            acc1 = validate(test_iter, model, criterion, record_step)
