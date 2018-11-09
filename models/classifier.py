@@ -15,6 +15,7 @@ class RNNTextClassifier(nn.Module):
         bidirectional = MODEL_session.get('bidirectional', False)
         max_len = int(MODEL_session.get('max_len', 500))
         n_encoder_layer = int(MODEL_session.get('n_encoder_layer', 1))
+        update_embedding = MODEL_session.get('update_embedding', False)
 
         if bidirectional:
             output_size = hidden_size * 2
@@ -28,7 +29,8 @@ class RNNTextClassifier(nn.Module):
                                   n_layers=n_encoder_layer,
                                   variable_lengths=True,
                                   bidirectional=bidirectional,
-                                  embedding=vocab.vectors)
+                                  embedding=vocab.vectors,
+                                  update_embedding=update_embedding)
         self.predictor = nn.Linear(output_size, n_label)
 
     def forward(self, seq, lengths):
