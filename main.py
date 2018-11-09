@@ -73,7 +73,7 @@ if __name__ == '__main__':
         if clf_type.lower() == 'rnn':
             model = RNNTextClassifier(vocab, MODEL_session)
         if torch.cuda.is_available():
-            model = model.cuda
+            model = model.cuda()
         print(model)
         print_progress("Model config Done")
     else:
