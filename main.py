@@ -29,7 +29,7 @@ def train(model, text, label, loss_func, opt, running_loss):
     return batch_loss, running_loss
 
 
-def validate(val_loader, model, criterion):
+def validate(val_loader, model, criterion, print_freq):
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
@@ -39,7 +39,8 @@ def validate(val_loader, model, criterion):
 
     with torch.no_grad():
         end = time.time()
-        for i, test_item in enumerate(val_loader):
+        i = 0
+        for test_item in val_loader:
             text, lengths = test_item.comment_text
             text.transpose_(0, 1)
             label = test_item.toxic
@@ -60,22 +61,20 @@ def validate(val_loader, model, criterion):
             # measure accuracy and record loss
             acc1 = accuracy(output, label, topk=(1, ))
             losses.update(loss.item(), text.size(0))
-            top1.update(acc1[0], text.size(0))
+            top1.update(acc1[0].item(), text.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % args.print_freq == 0:
+            if i % print_freq == 0:
                 print('Test: [{0}/{1}]\t'
                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                       'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                       'Acc@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
-                       i, len(val_loader), batch_time=batch_time, loss=losses,
-                       top1=top1))
-
-        print(' * Acc@1 {top1.avg:.3f}'
-              .format(top1=top1))
+                       i, len(val_loader), batch_time=batch_time, loss=losses, top1=top1))
+            i += 1
+        print(' * Acc@1 {top1.avg:.3f}'.format(top1=top1))
     return top1.avg
 
 
@@ -179,4 +178,4 @@ if __name__ == '__main__':
                     print('current batch loss: %f' % batch_loss)
             print('epoch%d loss: %f' % (epoch, running_loss/i))
 
-            validate(test_iter, model, criterion)
+            validate(test_iter, model, criterion, record_step)
