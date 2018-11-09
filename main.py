@@ -1,4 +1,5 @@
 import os
+import time
 import errno
 import argparse
 import configparser
@@ -7,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from utils.utils import check_fields, print_progress
+from utils.utils import check_fields, print_progress, AverageMeter, accuracy
 from utils.dataloader import load_data
 from models.classifier import RNNTextClassifier
 
@@ -26,6 +27,58 @@ def train(model, text, label, loss_func, opt, running_loss):
     loss.backward()
     opt.step()
     return batch_loss, running_loss
+
+
+def validate(val_loader, model, criterion):
+    batch_time = AverageMeter()
+    losses = AverageMeter()
+    top1 = AverageMeter()
+    top5 = AverageMeter()
+
+    # switch to evaluate mode
+    model.eval()
+
+    with torch.no_grad():
+        end = time.time()
+        for i, test_item in enumerate(val_loader):
+            text, lengths = test_item.comment_text
+            text.transpose_(0, 1)
+            label = test_item.toxic
+            sort_idx = np.argsort(-lengths)
+
+            text = text[sort_idx, :]
+            lengths = lengths[sort_idx]
+            label = label[sort_idx]
+
+            if torch.cuda.is_available():
+                text = text.cuda()
+                label = label.cuda()
+
+            # compute output
+            output = model(text)
+            loss = criterion(output, label)
+
+            # measure accuracy and record loss
+            acc1, acc5 = accuracy(output, label, topk=(1, ))
+            losses.update(loss.item(), input.size(0))
+            top1.update(acc1[0], input.size(0))
+            top5.update(acc5[0], input.size(0))
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % args.print_freq == 0:
+                print('Test: [{0}/{1}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Acc@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
+                       i, len(val_loader), batch_time=batch_time, loss=losses,
+                       top1=top1))
+
+        print(' * Acc@1 {top1.avg:.3f}'
+              .format(top1=top1))
+    return top1.avg
 
 
 if __name__ == '__main__':
@@ -91,7 +144,10 @@ if __name__ == '__main__':
             lr = float(TRAIN_session['learning_rate'])
             record_step = int(TRAIN_session.get('record_step', 100))
             opt = optim.Adam(model.parameters(), lr=lr)
-            loss_func = nn.CrossEntropyLoss()
+            if torch.cuda.is_available():
+                criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+            else:
+                criterion = nn.CrossEntropyLoss()
         else:
             raise Exception('TRAIN should be configured in config file')
     else:
@@ -120,33 +176,9 @@ if __name__ == '__main__':
                     text = text.cuda()
                     label = label.cuda()
 
-                batch_loss, running_loss = train(model, text, label, loss_func, opt, running_loss)
+                batch_loss, running_loss = train(model, text, label, criterion, opt, running_loss)
                 if i % record_step == 0:
                     print('current batch loss: %f' % batch_loss)
             print('epoch%d loss: %f' % (epoch, running_loss/i))
 
-            correct = 0
-            total = 0
-            for test_item in test_iter:
-                model.eval()
-
-                text, lengths = test_item.comment_text
-                text.transpose_(0, 1)
-                label = test_item.toxic
-                sort_idx = np.argsort(-lengths)
-
-                text = text[sort_idx, :]
-                lengths = lengths[sort_idx]
-                label = label[sort_idx]
-
-                if torch.cuda.is_available():
-                    text = text.cuda()
-                    label = label.cuda()
-
-                output = model(text, lengths)
-                _, pred_label = torch.topk(output, 1)
-                label = label.view(len(label), -1)
-                correct += (pred_label == label).sum()
-                total += output.shape[0]
-            print(correct.item(), total)
-
+        validate(test_iter, model, criterion)
