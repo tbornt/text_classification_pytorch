@@ -1,3 +1,6 @@
+import os
+import shutil
+
 import torch
 
 
@@ -34,6 +37,12 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
+
+
+def save_checkpoint(state, is_best, path, filename='checkpoint.pth.tar'):
+    torch.save(state, os.path.join(filename))
+    if is_best:
+        shutil.copyfile(filename, os.path.join('model_best.pth.tar'))
 
 
 def check_fields(required_fields, session):

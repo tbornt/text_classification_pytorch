@@ -94,4 +94,4 @@ def load_csv_data(session, kwargs):
                                         shuffle=False,
                                         batch_size=batch_size,
                                         repeat=False)
-        return train_iter, test_iter, TEXT.vocab
+        return train_iter, test_iter, TEXT

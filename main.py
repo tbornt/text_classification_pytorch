@@ -1,6 +1,7 @@
 import os
 import time
 import errno
+import pickle
 import argparse
 import configparser
 
@@ -8,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from utils.utils import check_fields, print_progress, AverageMeter, accuracy
+from utils.utils import check_fields, print_progress, AverageMeter, accuracy, save_checkpoint
 from utils.dataloader import load_data
 from models.classifier import RNNTextClassifier
 
@@ -150,9 +151,14 @@ if __name__ == '__main__':
                 if is_train:
                     required_fields = ['train_file', 'text_column', 'label_column', 'batch_size']
                     check_fields(required_fields, IO_session)
-                    train_iter, test_iter, vocab = load_data(file_type, IO_session, is_train=is_train)
+                    train_iter, test_iter, TEXT = load_data(file_type, IO_session, is_train=is_train)
+                    vocab = TEXT.vocab
         else:
             raise Exception('file format should be configured in IO session')
+        output_dir = IO_session.get('output_dir', 'output')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        pickle.dump(vocab, open('vocab.cache', 'wb'))
         # print('%d train samples and %d test samples' % (len(train_dataset), len(test_dataset)))
         print_progress("IO config Done")
     else:
@@ -199,8 +205,18 @@ if __name__ == '__main__':
         else:
             raise Exception('DECODE should be configured in config file')
 
+    best_acc1 = 0
     if is_train:
         for epoch in range(n_epoch):
             train(train_iter, model, criterion, optimizer, epoch, record_step)
 
             acc1 = validate(test_iter, model, criterion, record_step)
+            is_best = acc1 > best_acc1
+
+            best_acc1 = max(acc1, best_acc1)
+            save_checkpoint(output_dir, {
+                'epoch': epoch + 1,
+                'state_dict': model.state_dict(),
+                'best_acc1': best_acc1,
+                'optimizer': optimizer.state_dict()
+            }, is_best, output_dir)
