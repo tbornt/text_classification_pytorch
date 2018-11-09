@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 .idea/
 data/
+output/
 .vector_cache/
 
 
