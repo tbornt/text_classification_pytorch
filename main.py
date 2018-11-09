@@ -214,7 +214,7 @@ if __name__ == '__main__':
             is_best = acc1 > best_acc1
 
             best_acc1 = max(acc1, best_acc1)
-            save_checkpoint(output_dir, {
+            save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
