@@ -158,7 +158,7 @@ if __name__ == '__main__':
         output_dir = IO_session.get('output_dir', 'output')
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        pickle.dump(vocab, open('vocab.cache', 'wb'))
+        pickle.dump(vocab, open(os.path.join(output_dir, 'vocab.cache'), 'wb'))
         # print('%d train samples and %d test samples' % (len(train_dataset), len(test_dataset)))
         print_progress("IO config Done")
     else:
