@@ -59,8 +59,8 @@ def validate(val_loader, model, criterion):
 
             # measure accuracy and record loss
             acc1 = accuracy(output, label, topk=(1, ))
-            losses.update(loss.item(), input.size(0))
-            top1.update(acc1[0], input.size(0))
+            losses.update(loss.item(), text.size(0))
+            top1.update(acc1[0], text.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
