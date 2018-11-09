@@ -40,9 +40,9 @@ def accuracy(output, target, topk=(1,)):
 
 
 def save_checkpoint(state, is_best, path, filename='checkpoint.pth.tar'):
-    torch.save(state, os.path.join(filename))
+    torch.save(state, os.path.join(path, filename))
     if is_best:
-        shutil.copyfile(filename, os.path.join('model_best.pth.tar'))
+        shutil.copyfile(filename, os.path.join(path, 'model_best.pth.tar'))
 
 
 def check_fields(required_fields, session):
