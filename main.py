@@ -145,7 +145,7 @@ if __name__ == '__main__':
             record_step = int(TRAIN_session.get('record_step', 100))
             opt = optim.Adam(model.parameters(), lr=lr)
             if torch.cuda.is_available():
-                criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+                criterion = nn.CrossEntropyLoss().cuda()
             else:
                 criterion = nn.CrossEntropyLoss()
         else:
