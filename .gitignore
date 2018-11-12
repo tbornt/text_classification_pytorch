@@ -5,6 +5,8 @@ __pycache__/
 .idea/
 data/
 output/
+egs/kaggle_toxic/models/
+egs/kaggle_toxic/result/
 .vector_cache/
 
 
