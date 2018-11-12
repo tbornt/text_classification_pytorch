@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+from sklearn.utils.extmath import softmax
 from utils.utils import check_fields, print_progress, AverageMeter, accuracy, save_checkpoint, load_checkpoint
 from utils.dataloader import load_data
 from models.classifier import RNNTextClassifier
@@ -125,7 +126,7 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
     return top1.avg
 
 
-def decode(decode_iter, model, output_file, text_column):
+def decode(decode_iter, model, output_file, text_column, output_type):
     model.eval()
     output_file = open(output_file, 'w')
     with torch.no_grad():
@@ -142,12 +143,18 @@ def decode(decode_iter, model, output_file, text_column):
                 text = text.cuda()
 
             output = model(text, lengths)
-            _, pred = output.max(1)
-
-            # return to origin order
-            pred = pred[unsort_idx]
-            for label in pred:
-                output_file.write('%d\n' % label.item())
+            if output_type == 'label':
+                _, pred = output.max(1)
+                # return to origin order
+                pred = pred[unsort_idx]
+                for label in pred:
+                    output_file.write('%d\n' % label.item())
+            elif output_type == 'prob':
+                output = softmax(output)
+                output = output[unsort_idx]
+                for prob in output:
+                    prob = [str(p) for p in prob]
+                    output_file.write(','.join(prob)+'\n')
     output_file.close()
 
 if __name__ == '__main__':
@@ -243,7 +250,9 @@ if __name__ == '__main__':
     else:
         if 'DECODE' in sessions:
             print_progress('Start DECODE config')
+            DECODE_session = config_parser['DECODE']
             required_fields = ['use_gpu']
+            output_type = DECODE_session.get('output_type', 'label')
         else:
             raise Exception('DECODE should be configured in config file')
 
@@ -263,4 +272,4 @@ if __name__ == '__main__':
                 'optimizer': optimizer.state_dict()
             }, is_best, output_dir)
     else:
-        decode(decode_iter, model, output_file, text_column)
+        decode(decode_iter, model, output_file, text_column, output_type)
