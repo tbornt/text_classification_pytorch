@@ -128,6 +128,9 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
 
 def decode(decode_iter, model, output_file, text_column, output_type):
     model.eval()
+    output_dir = os.path.dirname(output_file)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     output_file = open(output_file, 'w')
     with torch.no_grad():
         for decode_item in decode_iter:
