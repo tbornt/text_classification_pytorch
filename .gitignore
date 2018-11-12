@@ -7,6 +7,7 @@ data/
 output/
 egs/kaggle_toxic/models/
 egs/kaggle_toxic/result/
+egs/kaggle_toxic/*.csv
 .vector_cache/
 
 
