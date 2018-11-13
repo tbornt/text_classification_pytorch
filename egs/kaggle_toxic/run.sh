@@ -1,22 +1,43 @@
 start=$(date +%s)
 
-python -u main.py -c egs/kaggle_toxic/configs/identityhate.train.config
-python -u main.py -c egs/kaggle_toxic/configs/identityhate.decode.config
+if [ $1 == "rnn" ]; then
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/identityhate.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/identityhate.decode.config
 
-python -u main.py -c egs/kaggle_toxic/configs/insult.train.config
-python -u main.py -c egs/kaggle_toxic/configs/insult.decode.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/insult.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/insult.decode.config
 
-python -u main.py -c egs/kaggle_toxic/configs/obscene.train.config
-python -u main.py -c egs/kaggle_toxic/configs/obscene.decode.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/obscene.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/obscene.decode.config
 
-python -u main.py -c egs/kaggle_toxic/configs/severetoxic.train.config
-python -u main.py -c egs/kaggle_toxic/configs/severetoxic.decode.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/severetoxic.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/severetoxic.decode.config
 
-python -u main.py -c egs/kaggle_toxic/configs/threat.train.config
-python -u main.py -c egs/kaggle_toxic/configs/threat.decode.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/threat.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/threat.decode.config
 
-python -u main.py -c egs/kaggle_toxic/configs/toxic.train.config
-python -u main.py -c egs/kaggle_toxic/configs/toxic.decode.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/toxic.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rnn_cfgs/toxic.decode.config
+
+elif [ $1 == "cnn" ]; then
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/identityhate.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/identityhate.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/insult.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/insult.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/obscene.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/obscene.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/severetoxic.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/severetoxic.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/threat.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/threat.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/toxic.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/cnn_cfgs/toxic.decode.config
+fi
 
 python egs/kaggle_toxic/submit.py -t data/test.csv \
 --toxic egs/kaggle_toxic/result/toxic_result.csv \
