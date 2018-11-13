@@ -14,6 +14,7 @@ from utils.utils import check_fields, print_progress, AverageMeter, accuracy, sa
 from utils.dataloader import load_data
 from models.rnn_classifier import RNNTextClassifier
 from models.cnn_classifier import CNNTextClassifier
+from models.dpcnn_classifier import DPCNNTextClassifier
 
 
 arg_parser = argparse.ArgumentParser()
@@ -227,13 +228,22 @@ if __name__ == '__main__':
             model = RNNTextClassifier(vocab, MODEL_session)
         elif clf_type.lower() == 'textcnn':
             if not TEXT.fix_length:
-                raise Exception('fix_length should be in IO session using cnn model')
+                raise Exception('fix_length should be in IO session using textcnn model')
             MODEL_session['fix_length'] = str(TEXT.fix_length)
             required_fields = ['embedding_size', 'n_label', 'fix_length']
             check_fields(required_fields, MODEL_session)
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = CNNTextClassifier(vocab, MODEL_session)
+        elif clf_type.lower() == 'dpcnn':
+            if not TEXT.fix_length:
+                raise Exception('fix_length should be in IO session using dpcnn model')
+            MODEL_session['fix_length'] = str(TEXT.fix_length)
+            required_fields = ['embedding_size', 'n_label', 'fix_length']
+            check_fields(required_fields, MODEL_session)
+            for key, val in MODEL_session.items():
+                print(key, '=', val)
+            model = DPCNNTextClassifier(vocab, MODEL_session)
         if torch.cuda.is_available():
             model = model.cuda()
         if not is_train:
