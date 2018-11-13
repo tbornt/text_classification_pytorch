@@ -71,6 +71,7 @@ def load_csv_data(session, kwargs):
         label_column = session['label_column']
         batch_size = int(session['batch_size'])
         val_ratio = float(session.get('val_ratio', 0))
+        fix_length = int(session.get('fix_length', None))
 
         train_df = pd.read_csv(train_file, usecols=[text_column, label_column])
         if val_ratio > 0:
@@ -78,7 +79,7 @@ def load_csv_data(session, kwargs):
         else:
             test_df = None
 
-        TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, include_lengths=True)
+        TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, include_lengths=True, fix_length=fix_length)
         LABEL = data.LabelField(sequential=False, use_vocab=False)
         train_dataset = DataFrameDataset(train_df, fields={text_column: TEXT, label_column: LABEL})
         if test_df is not None:
@@ -101,9 +102,10 @@ def load_csv_data(session, kwargs):
         vocab_file = session['vocab_file']
         text_column = session['text_column']
         batch_size = int(session['batch_size'])
+        fix_length = session.get('fix_length', 1000)
 
         vocab = pickle.load(open(vocab_file, 'rb'))
-        TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, include_lengths=True)
+        TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, include_lengths=True, fix_length=fix_length)
         TEXT.vocab = vocab
         decode_df = pd.read_csv(decode_file, usecols=[text_column])
         decode_dataset = DataFrameDataset(decode_df, fields={text_column: TEXT})

@@ -13,6 +13,7 @@ from sklearn.utils.extmath import softmax
 from utils.utils import check_fields, print_progress, AverageMeter, accuracy, save_checkpoint, load_checkpoint
 from utils.dataloader import load_data
 from models.rnn_classifier import RNNTextClassifier
+from models.cnn_classifier import CNNTextClassifier
 
 
 arg_parser = argparse.ArgumentParser()
@@ -175,6 +176,7 @@ if __name__ == '__main__':
             print_progress('Start Decoding')
     else:
         is_train = True
+
     if 'IO' in sessions:
         print_progress("Start config IO")
         IO_session = config_parser['IO']
@@ -214,13 +216,23 @@ if __name__ == '__main__':
     if 'MODEL' in sessions:
         print_progress("Start config Model")
         MODEL_session = config_parser['MODEL']
-        required_fields = ['type', 'rnn_type', 'embedding_size', 'hidden_size', 'n_label']
+        required_fields = ['type']
         check_fields(required_fields, MODEL_session)
-        for key, val in MODEL_session.items():
-            print(key, '=', val)
         clf_type = MODEL_session['type']
         if clf_type.lower() == 'rnn':
+            required_fields = ['rnn_type', 'embedding_size', 'hidden_size', 'n_label']
+            check_fields(required_fields, MODEL_session)
+            for key, val in MODEL_session.items():
+                print(key, '=', val)
             model = RNNTextClassifier(vocab, MODEL_session)
+        elif clf_type.lower() == 'textcnn':
+            required_fields = ['embedding_size', 'n_label']
+            check_fields(required_fields, MODEL_session)
+            if not TEXT.fix_length:
+                raise Exception('fix_length should be in IO session for cnn model')
+            for key, val in MODEL_session.items():
+                print(key, '=', val)
+            model = CNNTextClassifier(vocab, MODEL_session)
         if torch.cuda.is_available():
             model = model.cuda()
         if not is_train:
