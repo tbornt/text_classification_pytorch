@@ -225,7 +225,7 @@ if __name__ == '__main__':
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = RNNTextClassifier(vocab, MODEL_session)
-        elif clf_type.lower() == 'cnn':
+        elif clf_type.lower() == 'textcnn':
             required_fields = ['embedding_size', 'n_label']
             check_fields(required_fields, MODEL_session)
             if not TEXT.fix_length:
