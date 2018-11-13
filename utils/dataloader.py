@@ -104,7 +104,9 @@ def load_csv_data(session, kwargs):
         vocab_file = session['vocab_file']
         text_column = session['text_column']
         batch_size = int(session['batch_size'])
-        fix_length = session.get('fix_length', 1000)
+        fix_length = session.get('fix_length', None)
+        if fix_length:
+            fix_length = int(fix_length)
 
         vocab = pickle.load(open(vocab_file, 'rb'))
         TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, include_lengths=True, fix_length=fix_length)
