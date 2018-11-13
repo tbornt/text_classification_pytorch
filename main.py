@@ -386,7 +386,7 @@ if __name__ == '__main__':
                                                         label_column,
                                                         n_label)
             if n_label == 2:
-                is_best = f1 > best_f1
+                is_best = auc > best_auc
             else:
                 is_best = acc1 > best_acc1
 
