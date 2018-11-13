@@ -228,7 +228,7 @@ if __name__ == '__main__':
         elif clf_type.lower() == 'textcnn':
             if not TEXT.fix_length:
                 raise Exception('fix_length should be in IO session using cnn model')
-            MODEL_session['fix_length'] = TEXT.fix_length
+            MODEL_session['fix_length'] = str(TEXT.fix_length)
             required_fields = ['embedding_size', 'n_label', 'fix_length']
             check_fields(required_fields, MODEL_session)
             for key, val in MODEL_session.items():

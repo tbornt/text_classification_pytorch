@@ -55,7 +55,7 @@ class CNNTextClassifier(nn.Module):
         input_dropout_p = float(MODEL_session.get('input_dropout_p', 0.0))
         dropout_p = float(MODEL_session.get('dropout_p', 0.0))
         n_label = int(MODEL_session['n_label'])
-        fix_length = MODEL_session['fix_length']
+        fix_length = int(MODEL_session['fix_length'])
 
         self.n_label = n_label
         self.encoder = EncoderCNN(len(vocab),
