@@ -7,8 +7,8 @@ from sklearn import metrics
 
 
 def class_eval(prediction, target):
-    prediction = np.exp(prediction.numpy())
-    target = target.numpy()
+    prediction = np.exp(prediction.cpu().numpy())
+    target = target.cpu().numpy()
     pred_label = np.argmax(prediction, axis=1)
     target_label = np.squeeze(target)
     if prediction.shape[1] == 2:
