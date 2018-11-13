@@ -63,10 +63,12 @@ class CNNTextClassifier(nn.Module):
                                   input_dropout_p=input_dropout_p,
                                   embedding=vocab.vectors)
 
+        self.dropout = nn.Dropout(dropout_p)
         self.predictor = nn.Linear(3, n_label)
 
     def forward(self, x, lengths=None):
         out = self.encoder(x)
+        out = self.dropout(out)
         out = self.predictor(out)
         out = out.view(-1, self.n_label)
         return out
