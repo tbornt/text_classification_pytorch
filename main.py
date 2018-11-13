@@ -225,11 +225,11 @@ if __name__ == '__main__':
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = RNNTextClassifier(vocab, MODEL_session)
-        elif clf_type.lower() == 'textcnn':
+        elif clf_type.lower() == 'cnn':
             required_fields = ['embedding_size', 'n_label']
             check_fields(required_fields, MODEL_session)
             if not TEXT.fix_length:
-                raise Exception('fix_length should be in IO session for cnn model')
+                raise Exception('fix_length should be in IO session using cnn model')
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = CNNTextClassifier(vocab, MODEL_session)
