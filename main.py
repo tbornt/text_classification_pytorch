@@ -198,11 +198,15 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
                                                                      loss=losses,
                                                                      top1=accuracies))
             i += 1
-        print(' * Acc {top1.avg:.3f}'.format(top1=accuracies))
-        print(' * Precision {top1.avg:.3f}'.format(top1=precisions))
-        print(' * Recall {top1.avg:.3f}'.format(top1=recalls))
-        print(' * F1 {top1.avg:.3f}'.format(top1=fscores))
-        print(' * AUC {top1.avg:.3f}'.format(top1=auc_scores))
+
+        if n_label == 2:
+            print(' * Acc {top1.avg:.3f}'.format(top1=accuracies))
+            print(' * Precision {top1.avg:.3f}'.format(top1=precisions))
+            print(' * Recall {top1.avg:.3f}'.format(top1=recalls))
+            print(' * F1 {top1.avg:.3f}'.format(top1=fscores))
+            print(' * AUC {top1.avg:.3f}'.format(top1=auc_scores))
+        else:
+            print(' * Acc {top1.avg:.3f}'.format(top1=accuracies))
     return accuracies.avg, precisions.avg, recalls.avg, fscores.avg, auc_scores.avg
 
 
