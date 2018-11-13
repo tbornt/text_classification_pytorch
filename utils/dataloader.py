@@ -71,7 +71,9 @@ def load_csv_data(session, kwargs):
         label_column = session['label_column']
         batch_size = int(session['batch_size'])
         val_ratio = float(session.get('val_ratio', 0))
-        fix_length = int(session.get('fix_length', None))
+        fix_length = session.get('fix_length', None)
+        if fix_length:
+            fix_length = int(fix_length)
 
         train_df = pd.read_csv(train_file, usecols=[text_column, label_column])
         if val_ratio > 0:
