@@ -248,6 +248,7 @@ if __name__ == '__main__':
                 criterion = nn.CrossEntropyLoss().cuda()
             else:
                 criterion = nn.CrossEntropyLoss()
+            print_progress('TRAIN coinfg Done')
         else:
             raise Exception('TRAIN should be configured in config file')
     else:
@@ -256,6 +257,7 @@ if __name__ == '__main__':
             DECODE_session = config_parser['DECODE']
             required_fields = ['use_gpu']
             output_type = DECODE_session.get('output_type', 'label')
+            print_progress('DECODE config Done')
         else:
             raise Exception('DECODE should be configured in config file')
 
