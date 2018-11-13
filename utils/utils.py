@@ -16,7 +16,7 @@ def class_eval(prediction, target):
             target_label, pred_label, average='binary')
         try:
             auc_score = metrics.roc_auc_score(target_label, prediction[:, 1])
-        except:
+        except:  # all true label are 0
             auc_score = 0.0
         accuracy = metrics.accuracy_score(target_label, pred_label)
     else:
