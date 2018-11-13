@@ -72,4 +72,3 @@ class CNNTextClassifier(nn.Module):
         out = self.predictor(out)
         out = out.view(-1, self.n_label)
         return out
-
