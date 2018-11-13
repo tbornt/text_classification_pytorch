@@ -44,6 +44,10 @@ class EncoderCNN(nn.Module):
 
 
 class CNNTextClassifier(nn.Module):
+    """
+    Convolutional Neural Networks for Sentence Classification in PyTorch 
+    https://arxiv.org/abs/1408.5882
+    """
     def __init__(self, vocab, MODEL_session):
         super(CNNTextClassifier, self).__init__()
         embedding_size = int(MODEL_session['embedding_size'])
