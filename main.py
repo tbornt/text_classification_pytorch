@@ -12,7 +12,7 @@ import numpy as np
 from sklearn.utils.extmath import softmax
 from utils.utils import check_fields, print_progress, AverageMeter, accuracy, save_checkpoint, load_checkpoint
 from utils.dataloader import load_data
-from models.classifier import RNNTextClassifier
+from models.rnn_classifier import RNNTextClassifier
 
 
 arg_parser = argparse.ArgumentParser()
