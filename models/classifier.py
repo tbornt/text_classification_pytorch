@@ -16,6 +16,8 @@ class RNNTextClassifier(nn.Module):
         max_len = int(MODEL_session.get('max_len', 500))
         n_encoder_layer = int(MODEL_session.get('n_encoder_layer', 1))
         update_embedding = MODEL_session.get('update_embedding', False)
+        input_dropout_p = float(MODEL_session.get('input_dropout_p', 0.0))
+        dropout_p = float(MODEL_session.get('dropout_p', 0.0))
 
         if bidirectional:
             output_size = hidden_size * 2
@@ -23,6 +25,8 @@ class RNNTextClassifier(nn.Module):
             output_size = hidden_size
         self.encoder = EncoderRNN(len(vocab),
                                   rnn_cell=clf_rnn_type,
+                                  input_dropout_p=input_dropout_p,
+                                  dropout_p=dropout_p,
                                   embedding_size=embedding_size,
                                   max_len=max_len,
                                   hidden_size=hidden_size,
