@@ -1,3 +1,5 @@
+start=$(date +%s)
+
 python -u main.py -c egs/kaggle_toxic/configs/identityhate.train.config
 python -u main.py -c egs/kaggle_toxic/configs/identityhate.decode.config
 
@@ -24,3 +26,7 @@ python egs/kaggle_toxic/submit.py -t data/test.csv \
 --insult egs/kaggle_toxic/result/insult_result.csv \
 --identityhate egs/kaggle_toxic/result/identity_hate_result.csv \
 --output egs/kaggle_toxic/submission.csv
+
+end=$(date +%s)
+runtime=$(python -c "print('%u:%02u' % ((${end} - ${start})/60, (${end} - ${start})%60))")
+echo "Runtime was $runtime"
