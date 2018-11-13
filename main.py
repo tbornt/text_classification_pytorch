@@ -4,13 +4,16 @@ import errno
 import pickle
 import argparse
 import configparser
+import warnings
+warnings.filterwarnings('ignore')
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from sklearn.utils.extmath import softmax
-from utils.utils import check_fields, print_progress, AverageMeter, accuracy, save_checkpoint, load_checkpoint
+from utils.utils import check_fields, print_progress, AverageMeter, class_eval, save_checkpoint, \
+    load_checkpoint, accuracy
 from utils.dataloader import load_data
 from models.rnn_classifier import RNNTextClassifier
 from models.cnn_classifier import CNNTextClassifier
@@ -22,11 +25,16 @@ arg_parser.add_argument('-c', '--config', required=True, help='config file')
 config_parser = configparser.ConfigParser()
 
 
-def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_column, label_column):
+def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_column, label_column, n_label):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
-    top1 = AverageMeter()
+
+    accuracies = AverageMeter()
+    precisions = AverageMeter()
+    recalls = AverageMeter()
+    fscores = AverageMeter()
+    auc_scores = AverageMeter()
 
     # switch to train mode
     model.train()
@@ -55,9 +63,19 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_col
         loss = criterion(output, label)
 
         # measure accuracy and record loss
-        acc1 = accuracy(output, label, topk=(1,))
+        if n_label == 2:
+            accuracy, precision, recall, fscore, auc_score = \
+                class_eval(output.data.cpu(), label)
+            accuracies.update(accuracy, label.size(0))
+            precisions.update(precision, label.size(0))
+            recalls.update(recall, label.size(0))
+            fscores.update(fscore, label.size(0))
+            auc_scores.update(auc_score, label.size(0))
+        else:
+            acc1 = accuracy(output, label, topk=(1,))
+            accuracies.update(acc1[0].item(), text.size(0))
+
         losses.update(loss.item(), text.size(0))
-        top1.update(acc1[0].item(), text.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -69,20 +87,47 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_col
         end = time.time()
 
         if i % print_freq == 0:
-            print('Epoch: [{0}][{1}/{2}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Acc@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
-                   epoch, i, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=losses, top1=top1))
+            if n_label == 2:
+                print('Epoch: [{0}][{1}/{2}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                      'Precision {prec.val:.3f} ({prec.avg:.3f})\t'
+                      'Recall {recall.val:.3f} ({recall.avg:.3f})\t'
+                      'F1 {f1.val:.3f} ({f1.avg:.3f})\t'
+                      'AUC {auc.val:.3f} ({auc.avg:.3f})'.format(epoch, i, len(train_loader),
+                                                                 batch_time=batch_time,
+                                                                 data_time=data_time,
+                                                                 loss=losses,
+                                                                 top1=accuracies,
+                                                                 prec=precisions,
+                                                                 recall=recalls,
+                                                                 f1=fscores,
+                                                                 auc=auc_scores))
+            else:
+                print('Epoch: [{0}][{1}/{2}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Acc@1 {top1.val:.3f} ({top1.avg:.3f})'.format(epoch, i, len(train_loader),
+                                                                 batch_time=batch_time,
+                                                                 data_time=data_time,
+                                                                 loss=losses,
+                                                                 top1=accuracies))
+
         i += 1
 
 
-def validate(val_loader, model, criterion, print_freq, text_column, label_column):
+def validate(val_loader, model, criterion, print_freq, text_column, label_column, n_label):
     batch_time = AverageMeter()
     losses = AverageMeter()
-    top1 = AverageMeter()
+
+    accuracies = AverageMeter()
+    precisions = AverageMeter()
+    recalls = AverageMeter()
+    fscores = AverageMeter()
+    auc_scores = AverageMeter()
 
     # switch to evaluate mode
     model.eval()
@@ -109,23 +154,56 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
             loss = criterion(output, label)
 
             # measure accuracy and record loss
-            acc1 = accuracy(output, label, topk=(1, ))
+            if n_label == 2:
+                accuracy, precision, recall, fscore, auc_score =\
+                    class_eval(output.data.cpu(), label)
+                accuracies.update(accuracy, label.size(0))
+                precisions.update(precision, label.size(0))
+                recalls.update(recall, label.size(0))
+                fscores.update(fscore, label.size(0))
+                auc_scores.update(auc_score, label.size(0))
+            else:
+                acc1 = accuracy(output, label, topk=(1,))
+                accuracies.update(acc1[0].item(), text.size(0))
+
             losses.update(loss.item(), text.size(0))
-            top1.update(acc1[0].item(), text.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
             if i % print_freq == 0:
-                print('Test: [{0}/{1}]\t'
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                      'Acc@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
-                       i, len(val_loader), batch_time=batch_time, loss=losses, top1=top1))
+                if n_label == 2:
+                    print('Epoch: [{0}][{1}/{2}]\t'
+                          'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                          'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                          'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                          'Precision {prec.val:.3f} ({prec.avg:.3f})\t'
+                          'Recall {recall.val:.3f} ({recall.avg:.3f})\t'
+                          'F1 {f1.val:.3f} ({f1.avg:.3f})\t'
+                          'AUC {auc.val:.3f} ({auc.avg:.3f})'.format(epoch, i, len(val_loader),
+                                                                     batch_time=batch_time,
+                                                                     loss=losses,
+                                                                     top1=accuracies,
+                                                                     prec=precisions,
+                                                                     recall=recalls,
+                                                                     f1=fscores,
+                                                                     auc=auc_scores))
+                else:
+                    print('Epoch: [{0}][{1}/{2}]\t'
+                          'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                          'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                          'Acc@1 {top1.val:.3f} ({top1.avg:.3f})'.format(epoch, i, len(val_loader),
+                                                                     batch_time=batch_time,
+                                                                     loss=losses,
+                                                                     top1=accuracies))
             i += 1
-        print(' * Acc@1 {top1.avg:.3f}'.format(top1=top1))
-    return top1.avg
+        print(' * Acc {top1.avg:.3f}'.format(top1=accuracies))
+        print(' * Precision {top1.avg:.3f}'.format(top1=precisions))
+        print(' * Recall {top1.avg:.3f}'.format(top1=recalls))
+        print(' * F1 {top1.avg:.3f}'.format(top1=fscores))
+        print(' * AUC {top1.avg:.3f}'.format(top1=auc_scores))
+    return accuracies.avg, precisions.avg, recalls.avg, fscores.avg, auc_scores.avg
 
 
 def decode(decode_iter, model, output_file, text_column, output_type):
@@ -223,6 +301,7 @@ if __name__ == '__main__':
         if clf_type.lower() == 'rnn':
             required_fields = ['rnn_type', 'embedding_size', 'hidden_size', 'n_label']
             check_fields(required_fields, MODEL_session)
+            n_label = int(MODEL_session['n_label'])
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = RNNTextClassifier(vocab, MODEL_session)
@@ -232,6 +311,7 @@ if __name__ == '__main__':
             MODEL_session['fix_length'] = str(TEXT.fix_length)
             required_fields = ['embedding_size', 'n_label', 'fix_length']
             check_fields(required_fields, MODEL_session)
+            n_label = int(MODEL_session['n_label'])
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = CNNTextClassifier(vocab, MODEL_session)
@@ -241,6 +321,7 @@ if __name__ == '__main__':
             MODEL_session['fix_length'] = str(TEXT.fix_length)
             required_fields = ['embedding_size', 'n_label', 'fix_length']
             check_fields(required_fields, MODEL_session)
+            n_label = int(MODEL_session['n_label'])
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = DPCNNTextClassifier(vocab, MODEL_session)
@@ -286,13 +367,31 @@ if __name__ == '__main__':
 
     if is_train:
         best_acc1 = 0
+        best_precision = 0
+        best_recall = 0
+        best_f1 = 0
+        best_auc = 0
         for epoch in range(n_epoch):
-            train(train_iter, model, criterion, optimizer, epoch, record_step, text_column, label_column)
+            train(train_iter, model, criterion, optimizer, epoch, record_step, text_column, label_column, n_label)
 
-            acc1 = validate(test_iter, model, criterion, record_step, text_column, label_column)
-            is_best = acc1 > best_acc1
+            acc1, precision, recall, f1, auc = validate(test_iter,
+                                                        model,
+                                                        criterion,
+                                                        record_step,
+                                                        text_column,
+                                                        label_column,
+                                                        n_label)
+            if n_label == 2:
+                is_best = f1 > best_f1
+            else:
+                is_best = acc1 > best_acc1
 
             best_acc1 = max(acc1, best_acc1)
+            best_precision = max(precision, best_precision)
+            best_recall = max(recall, best_recall)
+            best_f1 = max(f1, best_f1)
+            best_auc = max(auc, best_auc)
+
             save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),

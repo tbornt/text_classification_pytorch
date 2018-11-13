@@ -2,6 +2,23 @@ import os
 import shutil
 
 import torch
+import numpy as np
+from sklearn import metrics
+
+
+def class_eval(prediction, target):
+    prediction = np.exp(prediction.numpy())
+    target = target.numpy()
+    pred_label = np.argmax(prediction, axis=1)
+    target_label = np.squeeze(target)
+    if prediction.shape[1] == 2:
+        precision, recall, fscore, _ = metrics.precision_recall_fscore_support(
+            target_label, pred_label, average='binary')
+        auc_score = metrics.roc_auc_score(target_label, prediction[:, 1])
+        accuracy = metrics.accuracy_score(target_label, pred_label)
+    else:
+        raise NotImplementedError
+    return accuracy, precision, recall, fscore, auc_score
 
 
 class AverageMeter(object):
