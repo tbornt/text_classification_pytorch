@@ -46,7 +46,7 @@ class DPCNNTextClassifier(nn.Module):
         x = self.act_fun(x)
         x = self.conv3(x)
 
-        while x.size()[-2] > 2:
+        while x.size()[-2] >= 2:
             x = self._block(x)
 
         x = x.view(batch, self.channel_size)

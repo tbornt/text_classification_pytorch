@@ -310,7 +310,6 @@ if __name__ == '__main__':
                 print(key, '=', val)
             model = RNNTextClassifier(vocab, MODEL_session)
         elif clf_type.lower() == 'textcnn':
-            MODEL_session['fix_length'] = str(TEXT.fix_length)
             required_fields = ['embedding_size', 'n_label']
             check_fields(required_fields, MODEL_session)
             n_label = int(MODEL_session['n_label'])
@@ -318,10 +317,7 @@ if __name__ == '__main__':
                 print(key, '=', val)
             model = CNNTextClassifier(vocab, MODEL_session)
         elif clf_type.lower() == 'dpcnn':
-            if not TEXT.fix_length:
-                raise Exception('fix_length should be in IO session using dpcnn model')
-            MODEL_session['fix_length'] = str(TEXT.fix_length)
-            required_fields = ['embedding_size', 'n_label', 'fix_length']
+            required_fields = ['embedding_size', 'n_label']
             check_fields(required_fields, MODEL_session)
             n_label = int(MODEL_session['n_label'])
             for key, val in MODEL_session.items():
