@@ -35,9 +35,30 @@ We apply the text classification models to [Toxic Comment Classification Challen
 
 ### some results
 
-basic lstm: kaggle_score=0.9710
+basic lstm:
 
-basic gru: kaggle_score=0.9718
+	kaggle_score=0.9710
 
-In this challenge, lstm or gru doesn't affect the result much.
+basic gru:
+
+	kaggle_score=0.9718
+
+**In this challenge, seems that lstm or gru doesn't affect the result much.**
+
+basic gru + input_dropout:
+
+	kaggle_score=0.9771
+
+**Simple dropout get much better result.**
+
+TextCNN:
+
+	kaggle_score=0.9525
+
+
+**TextCNN doesn't perform well.**
+
+DPCNN:
+
+	kaggle_score=0.9773
 
