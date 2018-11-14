@@ -6,7 +6,10 @@ This repository contains the implmentation of various text classification models
 
 Current implemented model:
 
-* RNN based model. (LSTM,GRU,num layers,hidden size are all configurable)
+* basic LSTM
+* basci GRU
+* LSTM + attention
+* GRU + attention
 * TextCNN model. [Convolutional Neural Networks for Sentence Classification
 ](https://arxiv.org/abs/1408.5882)
 * DPCNN model.[Deep Pyramid Convolutional Neural Networks for Text Categorization
@@ -15,10 +18,10 @@ Current implemented model:
 ## Requirements
 
 * python3
-* pytorch4.0
+* pytorch 4.0
 * requirements.txt
 
-First install python3 and pytorch4.0. Then run `pip3 install -r requirements.txt`
+First install python3 and pytorch4.0. Then run `pip3 install -r requirements.txt`.
 
 ## Experiments
 
