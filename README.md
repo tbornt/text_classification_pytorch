@@ -25,4 +25,19 @@ First install python3 and pytorch4.0. Then run `pip3 install -r requirements.txt
 
 ## Experiments
 
-We apply the text classification models to [Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge).
+We apply the text classification models to [Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge). There are six fields to be predicted in this challenge. So we create six individual models to predict each field.
+
+### steps
+
+* create a `data` folder on the same level with main.py
+* download data from [here](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data) and put all files to `data` folder.
+* run `bash egs/kaggle_toxic/run.sh model_type`. `model_type` can be one of `cnn`, `rnn`, `dpcnn`.
+
+### some results
+
+basic lstm: kaggle_score=0.9710
+
+basic gru: kaggle_score=0.9718
+
+In this challenge, lstm or gru doesn't affect the result much.
+
