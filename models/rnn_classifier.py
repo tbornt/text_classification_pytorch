@@ -1,6 +1,7 @@
 import torch
-from torch.autograd import Variable
 import torch.nn as nn
+from torch.autograd import Variable
+from torch.nn import functional as F
 
 
 class BaseRNN(nn.Module):
@@ -136,7 +137,9 @@ class RNNTextClassifier(nn.Module):
         update_embedding = MODEL_session.get('update_embedding', False)
         input_dropout_p = float(MODEL_session.get('input_dropout_p', 0.0))
         dropout_p = float(MODEL_session.get('dropout_p', 0.0))
+        attention = MODEL_session.get('attention', False)
 
+        self.attention = attention
         if bidirectional:
             output_size = hidden_size * 2
         else:
@@ -155,8 +158,39 @@ class RNNTextClassifier(nn.Module):
                                   update_embedding=update_embedding)
         self.predictor = nn.Linear(output_size, n_label)
 
+    def attention_layer(self, output, final_state):
+
+        """ 
+        Now we will incorporate Attention mechanism in our LSTM model. In this new model, we will use attention to compute soft alignment score corresponding
+        between each of the hidden_state and the last hidden_state of the LSTM. We will be using torch.bmm for the batch matrix multiplication.
+
+        Arguments
+        ---------
+
+        output : contains hidden layer outputs for each sequence.
+        final_state : Final time-step hidden state (h_n)
+
+        ---------
+
+        Returns : It performs attention mechanism by first computing weights for each of the sequence present in lstm_output and and then finally computing the
+                  new hidden state.
+
+        Tensor Size :
+                    hidden.size() = (batch_size, hidden_size)
+                    attn_weights.size() = (batch_size, num_seq)
+                    soft_attn_weights.size() = (batch_size, num_seq)
+                    new_hidden_state.size() = (batch_size, hidden_size)
+
+        """
+        hidden = final_state.squeeze(0)
+        attn_weights = torch.bmm(output, hidden.unsqueeze(2)).squeeze(2)
+        soft_attn_weights = F.softmax(attn_weights, 1)
+        new_hidden_state = torch.bmm(output.transpose(1, 2), soft_attn_weights.unsqueeze(2)).squeeze(2)
+
+        return new_hidden_state
+
     def forward(self, seq, lengths):
-        output, _ = self.encoder(seq, lengths)
+        output, _ = self.encoder(seq, lengths)  # output.shape = (batch_size, num_seq, hidden_size)
         idx = (torch.LongTensor(lengths) - 1).view(-1, 1).expand(
             len(lengths), output.size(2))
         time_dimension = 1
@@ -165,5 +199,9 @@ class RNNTextClassifier(nn.Module):
             idx = idx.cuda(output.data.get_device())
         last_output = output.gather(
             time_dimension, Variable(idx)).squeeze(time_dimension)
-        pred = self.predictor(last_output)
+        if not self.attention:
+            pred = self.predictor(last_output)
+        else:
+            attn_out = self.attention_layer(output, last_output)
+            pred = self.predictor(attn_out)
         return pred
