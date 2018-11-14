@@ -13,7 +13,8 @@ import torch.optim as optim
 import numpy as np
 from sklearn.utils.extmath import softmax
 from utils.utils import check_fields, print_progress, AverageMeter, class_eval, save_checkpoint, \
-    load_checkpoint, accuracy
+    load_checkpoint
+from utils.focalloss import FocalLoss
 from utils.dataloader import load_data
 from models.rnn_classifier import RNNTextClassifier
 from models.cnn_classifier import CNNTextClassifier
@@ -347,16 +348,26 @@ if __name__ == '__main__':
             record_step = int(TRAIN_session.get('record_step', 100))
             optim_type = TRAIN_session.get('optim_type', 'adam')
             weigth_decay = float(TRAIN_session.get('weight_decay', 0.0))
+            loss_type = TRAIN_session.get('loss_type', 'cross_entropy')
             if optim_type.lower() == 'adam':
                 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weigth_decay)
             elif optim_type.lower() == 'sgd':
                 optimizer = optim.SGD(model.parameters(), lr=lr, weigth_decay=weigth_decay)
             else:
                 raise Exception('Other optimizer is not supported')
-            if torch.cuda.is_available():
-                criterion = nn.CrossEntropyLoss().cuda()
+
+            if loss_type.lower() == 'cross_entropy':
+                if torch.cuda.is_available():
+                    criterion = nn.CrossEntropyLoss().cuda()
+                else:
+                    criterion = nn.CrossEntropyLoss()
+            elif loss_type.lower() == 'focal':
+                if torch.cuda.is_available():
+                    criterion = FocalLoss(n_label).cuda()
+                else:
+                    criterion = FocalLoss(n_label)
             else:
-                criterion = nn.CrossEntropyLoss()
+                raise Exception('Other loss is not supported')
             print_progress('TRAIN coinfg Done')
         else:
             raise Exception('TRAIN should be configured in config file')
