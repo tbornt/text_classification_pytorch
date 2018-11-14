@@ -11,3 +11,15 @@ Current implemented model:
 ](https://arxiv.org/abs/1408.5882)
 * DPCNN model.[Deep Pyramid Convolutional Neural Networks for Text Categorization
 ](https://ai.tencent.com/ailab/media/publications/ACL3-Brady.pdf)
+
+## Requirements
+
+* python3
+* pytorch4.0
+* requirements.txt
+
+First install python3 and pytorch4.0. Then run `pip3 install -r requirements.txt`
+
+## Experiments
+
+We apply the text classification models to [Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge).
