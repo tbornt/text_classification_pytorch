@@ -349,7 +349,14 @@ if __name__ == '__main__':
             n_epoch = int(TRAIN_session['n_epoch'])
             lr = float(TRAIN_session['learning_rate'])
             record_step = int(TRAIN_session.get('record_step', 100))
-            optimizer = optim.Adam(model.parameters(), lr=lr)
+            optim_type = TRAIN_session.get('optim_type', 'adam')
+            weigth_decay = float(TRAIN_session.get('weight_decay', 0.0))
+            if optim_type.lower() == 'adam':
+                optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weigth_decay)
+            elif optim_type.lower() == 'sgd':
+                optimizer = optim.SGD(model.parameters(), lr=lr, weigth_decay=weigth_decay)
+            else:
+                raise Exception('Other optimizer is not supported')
             if torch.cuda.is_available():
                 criterion = nn.CrossEntropyLoss().cuda()
             else:
