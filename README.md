@@ -45,8 +45,8 @@ We apply the text classification models to [Toxic Comment Classification Challen
 | Basic Bi-GRU        |hidden_size:200 n_layer:1 input_dropout:0      |   0.9718    |
 | Basic Bi-GRU        |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9771    |
 | Basic Bi-GRU+Attention       |hidden_size:200 n_layer:1 input_dropout:0.3     |   0.9756    |
-| Basic Bi-GRU+Attention+FocalLoss        |hidden_size:200 n_layer:1 input_dropout:0.3 attention FocalLoss     |   0.9756    |
+| Basic Bi-GRU+Attention+FocalLoss        |hidden_size:200 n_layer:1 input_dropout:0.3 attention FocalLoss     |   0.9763    |
 | Basic Bi-LSTM       |hidden_size:200 n_layer:1 input_dropout:0      |   0.9710    |
-| TextCNN        |   same as described in paper    |   0.9763    |
+| TextCNN        |   same as described in paper    |   0.9525    |
 | DPCNN        |   same as described in paper    |   0.9773    |
 
