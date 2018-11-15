@@ -80,7 +80,6 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_col
             accuracies.update(acc1[0].item(), text.size(0))
 
         losses.update(loss.item(), text.size(0))
-        writer.add_scalar('Train Loss', loss.item(), i)
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -122,6 +121,7 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_col
                                                                  top1=accuracies))
 
         i += 1
+    writer.add_scalar('Train Loss', losses.avg, epoch)
 
 
 def validate(val_loader, model, criterion, print_freq, text_column, label_column, n_label, writer):
@@ -172,7 +172,6 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
                 accuracies.update(acc1[0].item(), text.size(0))
 
             losses.update(loss.item(), text.size(0))
-            writer.add_scalar('Validation Loss', loss.item(), i)
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -213,6 +212,8 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
             print(' * AUC {top1.avg:.3f}'.format(top1=auc_scores))
         else:
             print(' * Acc {top1.avg:.3f}'.format(top1=accuracies))
+    writer.add_scalar('Validate Loss', losses.avg, epoch)
+    writer.add_scalar('Validate Acc', accuracies.avg, epoch)
     return accuracies.avg, precisions.avg, recalls.avg, fscores.avg, auc_scores.avg
 
 
