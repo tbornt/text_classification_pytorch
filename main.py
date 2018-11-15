@@ -18,6 +18,7 @@ from utils.dataloader import load_data
 from models.rnn_classifier import RNNTextClassifier
 from models.cnn_classifier import CNNTextClassifier
 from models.dpcnn_classifier import DPCNNTextClassifier
+from models.rcnn_classifier import RCNNTextClassifier
 
 
 import warnings
@@ -313,24 +314,33 @@ if __name__ == '__main__':
         if clf_type.lower() == 'rnn':
             required_fields = ['rnn_type', 'embedding_size', 'hidden_size', 'n_label']
             check_fields(required_fields, MODEL_session)
-            n_label = int(MODEL_session['n_label'])
+            n_label = int(MODEL_session['n_label'])  # required for later focal loss init
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = RNNTextClassifier(vocab, MODEL_session)
         elif clf_type.lower() == 'textcnn':
             required_fields = ['embedding_size', 'n_label']
             check_fields(required_fields, MODEL_session)
-            n_label = int(MODEL_session['n_label'])
+            n_label = int(MODEL_session['n_label'])  # required for later focal loss init
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = CNNTextClassifier(vocab, MODEL_session)
         elif clf_type.lower() == 'dpcnn':
             required_fields = ['embedding_size', 'n_label']
             check_fields(required_fields, MODEL_session)
-            n_label = int(MODEL_session['n_label'])
+            n_label = int(MODEL_session['n_label'])  # required for later focal loss init
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = DPCNNTextClassifier(vocab, MODEL_session)
+        elif clf_type.lower() == 'rcnn':
+            required_fields = ['rnn_type', 'embedding_size', 'hidden_size', 'n_label']
+            n_label = int(MODEL_session['n_label'])  # required for later focal loss init
+            check_fields(required_fields, MODEL_session)
+            for key, val in MODEL_session.items():
+                print(key, '=', val)
+            model = RCNNTextClassifier(vocab, MODEL_session)
+        else:
+            raise Exception('Other Model is not supported')
         if torch.cuda.is_available():
             model = model.cuda()
         if not is_train:
