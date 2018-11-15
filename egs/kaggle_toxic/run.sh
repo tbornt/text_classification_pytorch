@@ -56,6 +56,25 @@ elif [ $1 == "dpcnn" ]; then
 
     python -u main.py -c egs/kaggle_toxic/configs/dpcnn_cfgs/toxic.train.config
     python -u main.py -c egs/kaggle_toxic/configs/dpcnn_cfgs/toxic.decode.config
+
+elif [ $1 == "rcnn" ]; then
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/identityhate.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/identityhate.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/insult.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/insult.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/obscene.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/obscene.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/severetoxic.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/severetoxic.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/threat.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/threat.decode.config
+
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/toxic.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/toxic.decode.config
 fi
 
 python egs/kaggle_toxic/submit.py -t data/test.csv \
