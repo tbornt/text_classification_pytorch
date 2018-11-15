@@ -40,30 +40,13 @@ We apply the text classification models to [Toxic Comment Classification Challen
 
 ### some results
 
-basic lstm:
-
-	kaggle_score=0.9710
-
-basic gru:
-
-	kaggle_score=0.9718
-
-**In this challenge, seems that lstm or gru doesn't affect the result much.**
-
-basic gru + input_dropout:
-
-	kaggle_score=0.9771
-
-**Simple dropout get much better result.**
-
-TextCNN:
-
-	kaggle_score=0.9525
-
-
-**TextCNN doesn't perform well.**
-
-DPCNN:
-
-	kaggle_score=0.9773
+| 模型       | 参数    |  kaggle score  |
+| :--------:   | :----:   | :----: |
+| Basic Bi-GRU        |hidden_size:200 n_layer:1 input_dropout:0      |   0.9718    |
+| Basic Bi-GRU        |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9771    |
+| Basic Bi-GRU+Attention       |hidden_size:200 n_layer:1 input_dropout:0.3     |   0.9756    |
+| Basic Bi-GRU+Attention+FocalLoss        |hidden_size:200 n_layer:1 input_dropout:0.3 attention FocalLoss     |   0.9756    |
+| Basic Bi-LSTM       |hidden_size:200 n_layer:1 input_dropout:0      |   0.9710    |
+| TextCNN        |   same as described in paper    |   0.9525    |
+| DPCNN        |   same as described in paper    |   0.9773    |
 
