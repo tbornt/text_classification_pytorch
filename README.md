@@ -10,10 +10,11 @@ Current implemented model:
 * basci GRU
 * LSTM + attention
 * GRU + attention
-* TextCNN model [Convolutional Neural Networks for Sentence Classification
+* TextCNN [Convolutional Neural Networks for Sentence Classification
 ](https://arxiv.org/abs/1408.5882)
-* DPCNN model [Deep Pyramid Convolutional Neural Networks for Text Categorization
+* DPCNN [Deep Pyramid Convolutional Neural Networks for Text Categorization
 ](https://ai.tencent.com/ailab/media/publications/ACL3-Brady.pdf)
+* RCNN [Recurrent Convolutional Neural Networks for Text Classification](https://www.aaai.org/ocs/index.php/AAAI/AAAI15/paper/download/9745/9552)
 
 Current supported loss:
 
