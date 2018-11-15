@@ -4,13 +4,12 @@ import errno
 import pickle
 import argparse
 import configparser
-import warnings
-warnings.filterwarnings('ignore')
 
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
+from tensorboardX import SummaryWriter
 from sklearn.utils.extmath import softmax
 from utils.utils import check_fields, print_progress, AverageMeter, class_eval, save_checkpoint, \
     load_checkpoint
@@ -21,12 +20,16 @@ from models.cnn_classifier import CNNTextClassifier
 from models.dpcnn_classifier import DPCNNTextClassifier
 
 
+import warnings
+warnings.filterwarnings('ignore')
+
+
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument('-c', '--config', required=True, help='config file')
 config_parser = configparser.ConfigParser()
 
 
-def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_column, label_column, n_label):
+def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_column, label_column, n_label, writer):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -77,6 +80,7 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_col
             accuracies.update(acc1[0].item(), text.size(0))
 
         losses.update(loss.item(), text.size(0))
+        writer.add_scalar('Train Loss', loss.item(), i)
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -120,7 +124,7 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_col
         i += 1
 
 
-def validate(val_loader, model, criterion, print_freq, text_column, label_column, n_label):
+def validate(val_loader, model, criterion, print_freq, text_column, label_column, n_label, writer):
     batch_time = AverageMeter()
     losses = AverageMeter()
 
@@ -168,6 +172,7 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
                 accuracies.update(acc1[0].item(), text.size(0))
 
             losses.update(loss.item(), text.size(0))
+            writer.add_scalar('Validation Loss', loss.item(), i)
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -279,6 +284,7 @@ if __name__ == '__main__':
                     vocab = TEXT.vocab
                     # save vocab
                     output_dir = IO_session.get('output_dir', 'output')
+                    writer = SummaryWriter(output_dir)
                     if not os.path.exists(output_dir):
                         os.makedirs(output_dir)
                     pickle.dump(vocab, open(os.path.join(output_dir, 'vocab.cache'), 'wb'))
@@ -388,7 +394,7 @@ if __name__ == '__main__':
         best_f1 = 0
         best_auc = 0
         for epoch in range(n_epoch):
-            train(train_iter, model, criterion, optimizer, epoch, record_step, text_column, label_column, n_label)
+            train(train_iter, model, criterion, optimizer, epoch, record_step, text_column, label_column, n_label, writer)
 
             acc1, precision, recall, f1, auc = validate(test_iter,
                                                         model,
@@ -396,7 +402,8 @@ if __name__ == '__main__':
                                                         record_step,
                                                         text_column,
                                                         label_column,
-                                                        n_label)
+                                                        n_label,
+                                                        writer)
             if n_label == 2:
                 is_best = auc > best_auc
             else:
