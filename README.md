@@ -55,5 +55,5 @@ The main purpose of this experiment is to test different models, so feature engi
 | Basic Bi-LSTM       |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0      |   0.9710    |
 | TextCNN        |glove.6b.100d |   same as described in paper    |   0.9525    |
 | DPCNN        |glove.6b.100d |   same as described in paper    |   0.9773    |
-| RCNN        |glove.6b.100d |   same as described in paper    |   0.9797    |
+| RCNN        |glove.6b.100d |   bi-gru + max_pooling    |   0.9797    |
 
