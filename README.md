@@ -37,13 +37,13 @@ First install python3 and pytorch4.0. Then run `pip3 install -r requirements.txt
 First We apply the text classification models to [Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge). There are six fields to be predicted in this challenge. So we create six individual models to predict each field.
 The main purpose of this experiment is to test different models, so feature engineering is not included.
 
-#### steps
+#### Steps
 
 * create a `data` folder on the same level with main.py
 * download data from [here](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data) and put all files to `data` folder.
 * run `bash egs/kaggle_toxic/run.sh model_type`. `model_type` can be one of `cnn`, `rnn`, `dpcnn`.
 
-#### some results
+#### Some Results
 
 | 模型       |   word embedding   | 参数    |  kaggle score  |
 | :--------: |:----:| :----:   | :----: |
@@ -57,4 +57,14 @@ The main purpose of this experiment is to test different models, so feature engi
 | TextCNN        |glove.6b.100d |   same as described in paper    |   0.9525    |
 | DPCNN        |glove.6b.100d |   same as described in paper    |   0.9773    |
 | RCNN        |glove.6b.100d |   bi-gru + max_pooling    |   0.9797    |
+
+### Stanford Sentiment Treebank
+
+#### Description
+
+The dataset contains movie reviews parsed and labeled by Socher et al. (2013). The labels are Very Negative, Negative, Neutral, Positive, and Very Positive.
+
+| Train | Dev | Test | labels |
+| :---: | :---: | :---: | :---:|
+| 8544  | 1101  | 2210  | 5    |
 
