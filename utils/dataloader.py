@@ -72,12 +72,15 @@ def load_csv_data(session, kwargs):
         batch_size = int(session['batch_size'])
         val_ratio = float(session.get('val_ratio', 0))
         fix_length = session.get('fix_length', None)
+        validate_file = session.get('validate_file', None)
         if fix_length:
             fix_length = int(fix_length)
-
-        train_df = pd.read_csv(train_file, usecols=[text_column, label_column])
-        if val_ratio > 0:
+        sep = session.get('sep', ',')
+        train_df = pd.read_csv(train_file, usecols=[text_column, label_column], sep=sep)
+        if val_ratio > 0 and not validate_file:
             train_df, test_df = train_test_split(train_df, test_size=val_ratio)
+        elif validate_file:
+            test_df = pd.read_csv(validate_file, usecols=[text_column, label_column], sep=sep)
         else:
             test_df = None
 

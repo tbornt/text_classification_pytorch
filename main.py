@@ -13,6 +13,7 @@ from tensorboardX import SummaryWriter
 from sklearn.utils.extmath import softmax
 from utils.utils import check_fields, print_progress, AverageMeter, class_eval, save_checkpoint, \
     load_checkpoint
+from utils.utils import accuracy as acc_func
 from utils.focalloss import FocalLoss
 from utils.dataloader import load_data
 from models.rnn_classifier import RNNTextClassifier
@@ -70,15 +71,15 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_col
 
         # measure accuracy and record loss
         if n_label == 2:
-            accuracy, precision, recall, fscore, auc_score = \
+            acc, precision, recall, fscore, auc_score = \
                 class_eval(output.data.cpu(), label)
-            accuracies.update(accuracy, label.size(0))
+            accuracies.update(acc, label.size(0))
             precisions.update(precision, label.size(0))
             recalls.update(recall, label.size(0))
             fscores.update(fscore, label.size(0))
             auc_scores.update(auc_score, label.size(0))
         else:
-            acc1 = accuracy(output, label, topk=(1,))
+            acc1 = acc_func(output, label, topk=(1,))
             accuracies.update(acc1[0].item(), text.size(0))
 
         losses.update(loss.item(), text.size(0))
@@ -162,15 +163,15 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
 
             # measure accuracy and record loss
             if n_label == 2:
-                accuracy, precision, recall, fscore, auc_score =\
+                acc, precision, recall, fscore, auc_score =\
                     class_eval(output.data.cpu(), label)
-                accuracies.update(accuracy, label.size(0))
+                accuracies.update(acc, label.size(0))
                 precisions.update(precision, label.size(0))
                 recalls.update(recall, label.size(0))
                 fscores.update(fscore, label.size(0))
                 auc_scores.update(auc_score, label.size(0))
             else:
-                acc1 = accuracy(output, label, topk=(1,))
+                acc1 = acc_func(output, label, topk=(1,))
                 accuracies.update(acc1[0].item(), text.size(0))
 
             losses.update(loss.item(), text.size(0))
