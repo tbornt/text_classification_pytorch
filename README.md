@@ -57,6 +57,7 @@ The main purpose of this experiment is to test different models, so feature engi
 | TextCNN        |glove.6b.100d |   same as described in paper    |   0.9525    |
 | DPCNN        |glove.6b.100d |   same as described in paper    |   0.9773    |
 | RCNN        |glove.6b.100d |   bi-gru + max_pooling    |   0.9797    |
+| RCNN        |glove.6b.100d |   bi-gru + 2 layer + max_pooling    |   0.9789    |
 
 ### Stanford Sentiment Treebank
 
