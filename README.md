@@ -69,3 +69,18 @@ The dataset contains movie reviews parsed and labeled by Socher et al. (2013). T
 | :---: | :---: | :---: | :---:|
 | 8544  | 1101  | 2210  | 5    |
 
+#### Result
+
+| 模型       |   word embedding   | 参数    |  Accuracy  |
+| :--------: |:----:| :----:   | :----: |
+| Basic Bi-GRU        |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0      |   0.5067873303167421    |
+
+ConfusionMatrix
+
+|真实\预测| very negative | negative | neutral | positive | very positive |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+|very negative|0|1|107|0|0|
+|negative|0|12|387|5|2|
+|neutral|0|38|1103|14|2|
+|positive|1|8|412|5|0|
+|very positive|0|6|106|1|0|
