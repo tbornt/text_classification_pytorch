@@ -19,6 +19,7 @@ from models.rnn_classifier import RNNTextClassifier
 from models.cnn_classifier import CNNTextClassifier
 from models.dpcnn_classifier import DPCNNTextClassifier
 from models.rcnn_classifier import RCNNTextClassifier
+from models.multiheadattention_classifier import MultiHeadAttention_classifier
 
 
 import warnings
@@ -334,11 +335,22 @@ if __name__ == '__main__':
             model = DPCNNTextClassifier(vocab, MODEL_session)
         elif clf_type.lower() == 'rcnn':
             required_fields = ['rnn_type', 'embedding_size', 'hidden_size', 'n_label']
-            n_label = int(MODEL_session['n_label'])  # required for later focal loss init
             check_fields(required_fields, MODEL_session)
+            n_label = int(MODEL_session['n_label'])  # required for later focal loss init
             for key, val in MODEL_session.items():
                 print(key, '=', val)
             model = RCNNTextClassifier(vocab, MODEL_session)
+        elif clf_type.lower() == 'transformer':
+            required_fields = ['n_label']
+            check_fields(required_fields, MODEL_session)
+            n_label = int(MODEL_session['n_label'])  # required for later focal loss init
+            required_fields = ['fix_length']
+            check_fields(required_fields, IO_session)
+            fix_len = IO_session['fix_length']
+            MODEL_session['fix_length'] = fix_len
+            for key, val in MODEL_session.items():
+                print(key, '=', val)
+            model = MultiHeadAttention_classifier(vocab, MODEL_session)
         else:
             raise Exception('Other Model is not supported')
         if torch.cuda.is_available():
