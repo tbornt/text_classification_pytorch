@@ -9,6 +9,10 @@ egs/kaggle_toxic/models/
 egs/kaggle_toxic/result/
 egs/kaggle_toxic/*.csv
 egs/kaggle_toxic/submissions/
+egs/StanfordSentimentTreebank/models/
+egs/StanfordSentimentTreebank/result/
+egs/StanfordSentimentTreebank/*.csv
+egs/StanfordSentimentTreebank/submissions/
 egs/.DS_Store
 .DS_Store
 .vector_cache/
