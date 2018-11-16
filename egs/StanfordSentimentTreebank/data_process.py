@@ -35,3 +35,5 @@ if __name__ == '__main__':
     train_df.to_csv(os.path.join(data_dir, 'train.csv'), index=False)
     validate_df.to_csv(os.path.join(data_dir, 'val.csv'), index=False)
     test_df.to_csv(os.path.join(data_dir, 'test.csv'), index=False)
+
+    print(test_df['label'].value_counts())
