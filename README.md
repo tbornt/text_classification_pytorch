@@ -15,6 +15,7 @@ Current implemented model:
 * DPCNN [Deep Pyramid Convolutional Neural Networks for Text Categorization
 ](https://ai.tencent.com/ailab/media/publications/ACL3-Brady.pdf)
 * RCNN [Recurrent Convolutional Neural Networks for Text Classification](https://www.aaai.org/ocs/index.php/AAAI/AAAI15/paper/download/9745/9552)
+* Transformer Encoder [Attention Is All You Need](https://arxiv.org/pdf/1706.03762.pdf)
 
 Current supported loss:
 
