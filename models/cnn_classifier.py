@@ -7,6 +7,8 @@ class EncoderCNN(nn.Module):
     def __init__(self,
                  vocab_size,
                  embedding_size,
+                 filters,
+                 filter_size,
                  embedding=None,
                  update_embedding=False,
                  input_dropout_p=0):
@@ -16,29 +18,25 @@ class EncoderCNN(nn.Module):
             self.embedding.weight = nn.Parameter(embedding)
         self.embedding.weight.requires_grad = update_embedding
         self.input_dropout = nn.Dropout(p=input_dropout_p)
-
-        self.conv3 = nn.Conv2d(1, 1, (3, embedding_size))
-        self.conv4 = nn.Conv2d(1, 1, (4, embedding_size))
-        self.conv5 = nn.Conv2d(1, 1, (5, embedding_size))
+        filters = [int(x) for x in filters.split(',')]
+        convs = []
+        for filter in filters:
+            convs.append(nn.Conv2d(1, 1, (filter, filter_size)))
+        self.convs = nn.ModuleList(convs)
 
     def forward(self, input_var):
         embedded = self.embedding(input_var)
         embedded = self.input_dropout(embedded)
         batch, width, height = embedded.shape
         embedded = embedded.view((batch, 1, width, height))  # (batch, 1, sentence_length, embed_dim)
-        x1 = F.relu(self.conv3(embedded))  # (batch, kernel_num, H_out, 1)
-        x2 = F.relu(self.conv4(embedded))
-        x3 = F.relu(self.conv5(embedded))
-        # Pooling
-        x1 = x1.squeeze(3)  # x: (batch, kernel_num, H_out)
-        x2 = x2.squeeze(3)
-        x3 = x3.squeeze(3)
+        outputs = []
+        for conv in self.convs:
+            x = F.relu(conv(embedded))  # (batch, kernel_num, H_out, 1)
+            x = x.squeeze(3)  # x: (batch, kernel_num, H_out)
+            x = F.max_pool1d(x, x.size(2)).squeeze(2)
+            outputs.append(x)
 
-        x1 = F.max_pool1d(x1, x1.size(2)).squeeze(2)
-        x2 = F.max_pool1d(x2, x2.size(2)).squeeze(2)
-        x3 = F.max_pool1d(x3, x3.size(2)).squeeze(2)
-
-        out = torch.cat((x1, x2, x3), -1)
+        out = torch.cat(outputs, -1)
         return out
 
 
@@ -54,16 +52,21 @@ class CNNTextClassifier(nn.Module):
         input_dropout_p = float(MODEL_session.get('input_dropout_p', 0.0))
         dropout_p = float(MODEL_session.get('dropout_p', 0.0))
         n_label = int(MODEL_session['n_label'])
+        filters = MODEL_session.get('filters', '3,4,5')
+        filter_size = int(MODEL_session.get('filter_size', 100))
 
         self.n_label = n_label
+        self.n_filters = len([int(x) for x in filters.split(',')])
         self.encoder = EncoderCNN(len(vocab),
                                   embedding_size,
+                                  filters,
+                                  filter_size,
                                   update_embedding=update_embedding,
                                   input_dropout_p=input_dropout_p,
                                   embedding=vocab.vectors)
 
         self.dropout = nn.Dropout(dropout_p)
-        self.predictor = nn.Linear(3, n_label)
+        self.predictor = nn.Linear(self.n_filters, n_label)
 
     def forward(self, x, lengths=None):
         out = self.encoder(x)
