@@ -49,7 +49,7 @@ The main purpose of this experiment is to test different models, so feature engi
 | :--------: |:----:| :----:   | :----: |
 | Basic Bi-GRU        |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0      |   0.9718    |
 | Basic Bi-GRU        |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9771    |
-| Basic Bi-GRU        |glove.6b.50 |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9745    |
+| Basic Bi-GRU        |glove.6b.50d |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9745    |
 | Basic Bi-GRU+2 hidden layer       |glove.6b.100d |hidden_size:200 n_layer:2 input_dropout:0.3 dropout:0.5      |   0.9793    |
 | Basic Bi-GRU+FocalLoss        |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3 FocalLoss     |   0.9755    |
 | Basic Bi-GRU+Attention(dot)       |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3     |   0.9756    |
