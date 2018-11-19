@@ -7,6 +7,23 @@ from torchtext.data import Dataset, Example
 from sklearn.model_selection import train_test_split
 
 
+SUPPORTED_EMBEDDING = [
+    'charngram.100d',
+    'fasttext.en.300d',
+    'fasttext.simple.300d',
+    'glove.42B.300d',
+    'glove.6B.100d',
+    'glove.6B.200d',
+    'glove.6B.300d',
+    'glove.6B.50d',
+    'glove.840B.300d',
+    'glove.twitter.27B.100d',
+    'glove.twitter.27B.200d',
+    'glove.twitter.27B.25d',
+    'glove.twitter.27B.50d'
+]
+
+
 class DataFrameDataset(Dataset):
     """Class for using pandas DataFrames as a datasource"""
 
@@ -73,6 +90,7 @@ def load_csv_data(session, kwargs):
         val_ratio = float(session.get('val_ratio', 0))
         fix_length = session.get('fix_length', None)
         validate_file = session.get('validate_file', None)
+        pretrained_embedding = session.get('pretrained_embedding', 'glove.6B.100d')
         if fix_length:
             fix_length = int(fix_length)
         sep = session.get('sep', ',')
@@ -92,7 +110,9 @@ def load_csv_data(session, kwargs):
         else:
             test_dataset = None
         TEXT.build_vocab(train_dataset, test_dataset)
-        TEXT.vocab.load_vectors('glove.6B.100d')
+        if pretrained_embedding not in SUPPORTED_EMBEDDING:
+            raise Exception("%s is not supported embedding" % pretrained_embedding)
+        TEXT.vocab.load_vectors(pretrained_embedding)
         train_iter = data.BucketIterator(train_dataset,
                                          shuffle=True,
                                          batch_size=batch_size,
