@@ -138,8 +138,10 @@ class RNNTextClassifier(nn.Module):
         input_dropout_p = float(MODEL_session.get('input_dropout_p', 0.0))
         dropout_p = float(MODEL_session.get('dropout_p', 0.0))
         attention = MODEL_session.get('attention', False)
-
         self.attention = attention
+        if self.attention:
+            self.attention_type = MODEL_session.get('attention_type', 'dot')
+
         if bidirectional:
             output_size = hidden_size * 2
         else:
@@ -157,6 +159,8 @@ class RNNTextClassifier(nn.Module):
                                   embedding=vocab.vectors,
                                   update_embedding=update_embedding)
         self.predictor = nn.Linear(output_size, n_label)
+        if self.attention_type == 'general':
+            self.att_W = nn.Linear(output_size, output_size)
 
     def attention_layer(self, output, final_state):
 
@@ -183,7 +187,12 @@ class RNNTextClassifier(nn.Module):
 
         """
         hidden = final_state.squeeze(0)
-        attn_weights = torch.bmm(output, hidden.unsqueeze(2)).squeeze(2)
+        if self.attention_type == 'dot':
+            attn_weights = torch.bmm(output, hidden.unsqueeze(2)).squeeze(2)
+        elif self.attention_type == 'general':
+            attn_weights = torch.bmm(self.att_W(output), hidden.unsqueeze(2)).squeeze(2)
+        else:
+            raise Exception('attention type: %s is not supported' % self.attention_type)
         soft_attn_weights = F.softmax(attn_weights, 1)
         new_hidden_state = torch.bmm(output.transpose(1, 2), soft_attn_weights.unsqueeze(2)).squeeze(2)
 
