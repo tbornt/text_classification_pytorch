@@ -259,8 +259,6 @@ def decode(decode_iter, model, output_file, text_column, output_type, task_type)
                         output_file.write('%d\n' % label.item())
                 elif output_type == 'prob':
                     output = F.softmax(output)
-                    if loss_type.lower() in ['binary_cross_entropy']:
-                        output = F.sigmoid(output)
                     output = output[unsort_idx]
                     for prob in output:
                         prob = [str(p) for p in prob]
@@ -270,7 +268,10 @@ def decode(decode_iter, model, output_file, text_column, output_type, task_type)
                     pass
                 elif output_type == 'prob':
                     output = F.sigmoid(output)
-                    print(output)
+                    output = output[unsort_idx]
+                    for prob in output:
+                        prob = [str(p) for p in prob]
+                        output_file.write(','.join(prob)+'\n')
             else:
                 raise Exception('task type % s not allowed' % task_type)
     output_file.close()
