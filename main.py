@@ -265,7 +265,11 @@ def decode(decode_iter, model, output_file, text_column, output_type, task_type)
                         output_file.write(','.join(prob)+'\n')
             elif task_type == 'multi_label':
                 if output_type == 'label':
-                    raise NotImplementedError
+                    output = F.sigmoid(output)
+                    output = output[unsort_idx]
+                    for prob in output:
+                        prob = [str(1) if p.item() >= 0.5 else str(0) for p in prob]
+                        output_file.write(','.join(prob)+'\n')
                 elif output_type == 'prob':
                     output = F.sigmoid(output)
                     output = output[unsort_idx]
