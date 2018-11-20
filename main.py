@@ -230,7 +230,7 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
     return accuracies.avg, precisions.avg, recalls.avg, fscores.avg, auc_scores.avg
 
 
-def decode(decode_iter, model, output_file, text_column, output_type):
+def decode(decode_iter, model, output_file, text_column, output_type, task_type):
     model.eval()
     output_dir = os.path.dirname(output_file)
     if not os.path.exists(output_dir):
@@ -250,18 +250,29 @@ def decode(decode_iter, model, output_file, text_column, output_type):
                 text = text.cuda()
 
             output = model(text, lengths)
-            if output_type == 'label':
-                _, pred = output.max(1)
-                # return to origin order
-                pred = pred[unsort_idx]
-                for label in pred:
-                    output_file.write('%d\n' % label.item())
-            elif output_type == 'prob':
-                output = softmax(output)
-                output = output[unsort_idx]
-                for prob in output:
-                    prob = [str(p) for p in prob]
-                    output_file.write(','.join(prob)+'\n')
+            if task_type == 'multi_class':
+                if output_type == 'label':
+                    _, pred = output.max(1)
+                    # return to origin order
+                    pred = pred[unsort_idx]
+                    for label in pred:
+                        output_file.write('%d\n' % label.item())
+                elif output_type == 'prob':
+                    output = F.softmax(output)
+                    if loss_type.lower() in ['binary_cross_entropy']:
+                        output = F.sigmoid(output)
+                    output = output[unsort_idx]
+                    for prob in output:
+                        prob = [str(p) for p in prob]
+                        output_file.write(','.join(prob)+'\n')
+            elif task_type == 'multi_label':
+                if output_type == 'label':
+                    pass
+                elif output_type == 'prob':
+                    output = F.sigmoid(output)
+                    print(output)
+            else:
+                raise Exception('task type % s not allowed' % task_type)
     output_file.close()
 
 if __name__ == '__main__':
@@ -422,6 +433,7 @@ if __name__ == '__main__':
             DECODE_session = config_parser['DECODE']
             required_fields = ['use_gpu']
             output_type = DECODE_session.get('output_type', 'label')
+            task_type = DECODE_session.get('task_type', 'multi_class')
             print_progress('DECODE config Done')
         else:
             raise Exception('DECODE should be configured in config file')
@@ -471,4 +483,4 @@ if __name__ == '__main__':
                 'optimizer': optimizer.state_dict()
             }, is_best, output_dir)
     else:
-        decode(decode_iter, model, output_file, text_column, output_type)
+        decode(decode_iter, model, output_file, text_column, output_type, task_type)
