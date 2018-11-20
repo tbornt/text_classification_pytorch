@@ -27,15 +27,11 @@ class EncoderCNN(nn.Module):
     def forward(self, input_var):
         embedded = self.embedding(input_var)
         embedded = self.input_dropout(embedded)
-        batch, width, height = embedded.shape
-        embedded = embedded.view((batch, 1, width, height))  # (batch, 1, sentence_length, embed_dim)
-        outputs = []
-        for conv in self.convs:
-            x = F.relu(conv(embedded))  # (batch, kernel_num, H_out, 1)
-            x = x.squeeze(3)  # x: (batch, kernel_num, H_out)
-            x = F.max_pool1d(x, x.size(2)).squeeze(2)
-            outputs.append(x)
-        out = torch.cat(outputs, -1)
+        embedded = embedded.unsqueeze(1)
+
+        out = [F.relu(conv(embedded)).squeeze(3) for conv in self.convs]
+        out = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in out]
+        out = torch.cat(out, 1)
         return out
 
 
