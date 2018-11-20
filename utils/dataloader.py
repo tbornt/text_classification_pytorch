@@ -5,6 +5,7 @@ import pandas as pd
 from torchtext import data
 from torchtext.data import Dataset, Example
 from sklearn.model_selection import train_test_split
+from utils.utils import str2list
 
 
 SUPPORTED_EMBEDDING = [
@@ -84,8 +85,11 @@ def load_csv_data(session, kwargs):
     is_train = kwargs['is_train']
     if is_train:
         train_file = session['train_file']
-        text_column = session['text_column']
-        label_column = session['label_column']
+        text_column = str2list(session['text_column'])
+        if len(text_column) != 1:
+            raise Exception('only 1 text column needed, found %d: %s'% (len(text_column), ','.join(text_column)))
+        label_column = str2list(session['label_column'])
+        use_cols = text_column + label_column
         batch_size = int(session['batch_size'])
         val_ratio = float(session.get('val_ratio', 0))
         fix_length = session.get('fix_length', None)
@@ -94,19 +98,24 @@ def load_csv_data(session, kwargs):
         if fix_length:
             fix_length = int(fix_length)
         sep = session.get('sep', ',')
-        train_df = pd.read_csv(train_file, usecols=[text_column, label_column], sep=sep)
+        train_df = pd.read_csv(train_file, usecols=use_cols, sep=sep)
         if val_ratio > 0 and not validate_file:
             train_df, test_df = train_test_split(train_df, test_size=val_ratio)
         elif validate_file:
-            test_df = pd.read_csv(validate_file, usecols=[text_column, label_column], sep=sep)
+            test_df = pd.read_csv(validate_file, usecols=use_cols, sep=sep)
         else:
             test_df = None
 
         TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, include_lengths=True, fix_length=fix_length)
         LABEL = data.LabelField(sequential=False, use_vocab=False)
-        train_dataset = DataFrameDataset(train_df, fields={text_column: TEXT, label_column: LABEL})
+        fields = {}
+        for column in text_column:
+            fields[column] = TEXT
+        for column in label_column:
+            fields[column] = LABEL
+        train_dataset = DataFrameDataset(train_df, fields=fields)
         if test_df is not None:
-            test_dataset = DataFrameDataset(test_df, fields={text_column: TEXT, label_column: LABEL})
+            test_dataset = DataFrameDataset(test_df, fields=fields)
         else:
             test_dataset = None
         TEXT.build_vocab(train_dataset, test_dataset)
@@ -125,7 +134,9 @@ def load_csv_data(session, kwargs):
     else:
         decode_file = session['decode_file']
         vocab_file = session['vocab_file']
-        text_column = session['text_column']
+        text_column = str2list(session['text_column'])
+        if len(text_column) != 1:
+            raise Exception('only 1 text column needed, found %d: %s'% (len(text_column), ','.join(text_column)))
         batch_size = int(session['batch_size'])
         fix_length = session.get('fix_length', None)
         if fix_length:
@@ -134,8 +145,12 @@ def load_csv_data(session, kwargs):
         vocab = pickle.load(open(vocab_file, 'rb'))
         TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, include_lengths=True, fix_length=fix_length)
         TEXT.vocab = vocab
-        decode_df = pd.read_csv(decode_file, usecols=[text_column])
-        decode_dataset = DataFrameDataset(decode_df, fields={text_column: TEXT})
+        fields = {}
+        for column in text_column:
+            fields[column] = TEXT
+
+        decode_df = pd.read_csv(decode_file, usecols=text_column)
+        decode_dataset = DataFrameDataset(decode_df, fields=fields)
         decode_iter = data.BucketIterator(decode_dataset,
                                          shuffle=False,
                                          batch_size=batch_size,

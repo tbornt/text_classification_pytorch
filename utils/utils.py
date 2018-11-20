@@ -86,3 +86,7 @@ def check_fields(required_fields, session):
 
 def print_progress(text):
     print("=====%s=====" % text)
+
+
+def str2list(str, sep=','):
+    return str.split(sep)

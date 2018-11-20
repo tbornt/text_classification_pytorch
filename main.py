@@ -13,7 +13,7 @@ from tensorboardX import SummaryWriter
 from sklearn.utils.extmath import softmax
 from utils.utils import check_fields, print_progress, AverageMeter, class_eval, save_checkpoint, \
     load_checkpoint
-from utils.utils import accuracy as acc_func
+from utils.utils import accuracy as acc_func, str2list
 from utils.focalloss import FocalLoss
 from utils.dataloader import load_data
 from models.rnn_classifier import RNNTextClassifier
@@ -32,7 +32,7 @@ arg_parser.add_argument('-c', '--config', required=True, help='config file')
 config_parser = configparser.ConfigParser()
 
 
-def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_column, label_column, n_label, writer):
+def train(train_loader, model, loss_type, criterion, optimizer, epoch, print_freq, text_column, label_column, n_label, writer):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -53,34 +53,41 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_col
         data_time.update(time.time() - end)
 
         text, lengths = getattr(train_item, text_column)
-        text.transpose_(0, 1)
-        label = getattr(train_item, label_column)
+        text.transpose_(0, 1)  # batch first
         sort_idx = np.argsort(-lengths)
-
         text = text[sort_idx, :]
         lengths = lengths[sort_idx]
-        label = label[sort_idx]
+
+        if loss_type.lower() in ['focal', 'cross_entropy']:
+            if len(label_column) != 1:
+                raise Exception("only one label needed for %s loss" % loss_type.lower())
+            label = getattr(train_item, label_column[0])
+            labels = label[sort_idx]
+        elif loss_type.lower() in ['binary_cross_entropy']:
+            labels = []
+            for column in label_column:
+                label = getattr(train_item, column)
+                label = label[sort_idx]
+                label = label.unsqueeze(1)
+                labels.append(label)
+            labels = torch.cat(labels, 1).float()
 
         if torch.cuda.is_available():
             text = text.cuda()
-            label = label.cuda()
+            labels = labels.cuda()
 
         # compute output
         output = model(text, lengths)
-        loss = criterion(output, label)
+        loss = criterion(output, labels)
 
         # measure accuracy and record loss
-        if n_label == 2:
-            acc, precision, recall, fscore, auc_score = \
-                class_eval(output.data.cpu(), label)
-            accuracies.update(acc, label.size(0))
-            precisions.update(precision, label.size(0))
-            recalls.update(recall, label.size(0))
-            fscores.update(fscore, label.size(0))
-            auc_scores.update(auc_score, label.size(0))
-        else:
-            acc1 = acc_func(output, label, topk=(1,))
-            accuracies.update(acc1[0].item(), text.size(0))
+        acc, precision, recall, fscore, auc_score = \
+            class_eval(output.data.cpu(), label)
+        accuracies.update(acc, label.size(0))
+        precisions.update(precision, label.size(0))
+        recalls.update(recall, label.size(0))
+        fscores.update(fscore, label.size(0))
+        auc_scores.update(auc_score, label.size(0))
 
         losses.update(loss.item(), text.size(0))
 
@@ -94,34 +101,23 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, text_col
         end = time.time()
 
         if i % print_freq == 0:
-            if n_label == 2:
-                print('Epoch: [{0}][{1}/{2}]\t'
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                      'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                      'Precision {prec.val:.3f} ({prec.avg:.3f})\t'
-                      'Recall {recall.val:.3f} ({recall.avg:.3f})\t'
-                      'F1 {f1.val:.3f} ({f1.avg:.3f})\t'
-                      'AUC {auc.val:.3f} ({auc.avg:.3f})'.format(epoch, i, len(train_loader),
-                                                                 batch_time=batch_time,
-                                                                 data_time=data_time,
-                                                                 loss=losses,
-                                                                 top1=accuracies,
-                                                                 prec=precisions,
-                                                                 recall=recalls,
-                                                                 f1=fscores,
-                                                                 auc=auc_scores))
-            else:
-                print('Epoch: [{0}][{1}/{2}]\t'
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                      'Acc@1 {top1.val:.3f} ({top1.avg:.3f})'.format(epoch, i, len(train_loader),
-                                                                 batch_time=batch_time,
-                                                                 data_time=data_time,
-                                                                 loss=losses,
-                                                                 top1=accuracies))
+            print('Epoch: [{0}][{1}/{2}]\t'
+                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                  'Precision {prec.val:.3f} ({prec.avg:.3f})\t'
+                  'Recall {recall.val:.3f} ({recall.avg:.3f})\t'
+                  'F1 {f1.val:.3f} ({f1.avg:.3f})\t'
+                  'AUC {auc.val:.3f} ({auc.avg:.3f})'.format(epoch, i, len(train_loader),
+                                                             batch_time=batch_time,
+                                                             data_time=data_time,
+                                                             loss=losses,
+                                                             top1=accuracies,
+                                                             prec=precisions,
+                                                             recall=recalls,
+                                                             f1=fscores,
+                                                             auc=auc_scores))
 
         i += 1
     writer.add_scalar('Train Loss', losses.avg, epoch)
@@ -145,34 +141,41 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
         i = 0
         for test_item in val_loader:
             text, lengths = getattr(test_item, text_column)
-            text.transpose_(0, 1)
-            label = getattr(test_item, label_column)
+            text.transpose_(0, 1)  # batch first
             sort_idx = np.argsort(-lengths)
-
             text = text[sort_idx, :]
             lengths = lengths[sort_idx]
-            label = label[sort_idx]
+
+            if loss_type.lower() in ['focal', 'cross_entropy']:
+                if len(label_column) != 1:
+                    raise Exception("only one label needed for %s loss" % loss_type.lower())
+                label = getattr(test_item, label_column[0])
+                labels = label[sort_idx]
+            elif loss_type.lower() in ['binary_cross_entropy']:
+                labels = []
+                for column in label_column:
+                    label = getattr(test_item, column)
+                    label = label[sort_idx]
+                    label = label.unsqueeze(1)
+                    labels.append(label)
+                labels = torch.cat(labels, 1).float()
 
             if torch.cuda.is_available():
                 text = text.cuda()
-                label = label.cuda()
+                labels = labels.cuda()
 
             # compute output
             output = model(text, lengths)
-            loss = criterion(output, label)
+            loss = criterion(output, labels)
 
             # measure accuracy and record loss
-            if n_label == 2:
-                acc, precision, recall, fscore, auc_score =\
-                    class_eval(output.data.cpu(), label)
-                accuracies.update(acc, label.size(0))
-                precisions.update(precision, label.size(0))
-                recalls.update(recall, label.size(0))
-                fscores.update(fscore, label.size(0))
-                auc_scores.update(auc_score, label.size(0))
-            else:
-                acc1 = acc_func(output, label, topk=(1,))
-                accuracies.update(acc1[0].item(), text.size(0))
+            acc, precision, recall, fscore, auc_score =\
+                class_eval(output.data.cpu(), label)
+            accuracies.update(acc, label.size(0))
+            precisions.update(precision, label.size(0))
+            recalls.update(recall, label.size(0))
+            fscores.update(fscore, label.size(0))
+            auc_scores.update(auc_score, label.size(0))
 
             losses.update(loss.item(), text.size(0))
 
@@ -181,40 +184,28 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
             end = time.time()
 
             if i % print_freq == 0:
-                if n_label == 2:
-                    print('Epoch: [{0}][{1}/{2}]\t'
-                          'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                          'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                          'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                          'Precision {prec.val:.3f} ({prec.avg:.3f})\t'
-                          'Recall {recall.val:.3f} ({recall.avg:.3f})\t'
-                          'F1 {f1.val:.3f} ({f1.avg:.3f})\t'
-                          'AUC {auc.val:.3f} ({auc.avg:.3f})'.format(epoch, i, len(val_loader),
-                                                                     batch_time=batch_time,
-                                                                     loss=losses,
-                                                                     top1=accuracies,
-                                                                     prec=precisions,
-                                                                     recall=recalls,
-                                                                     f1=fscores,
-                                                                     auc=auc_scores))
-                else:
-                    print('Epoch: [{0}][{1}/{2}]\t'
-                          'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                          'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                          'Acc@1 {top1.val:.3f} ({top1.avg:.3f})'.format(epoch, i, len(val_loader),
-                                                                     batch_time=batch_time,
-                                                                     loss=losses,
-                                                                     top1=accuracies))
+                print('Epoch: [{0}][{1}/{2}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
+                      'Precision {prec.val:.3f} ({prec.avg:.3f})\t'
+                      'Recall {recall.val:.3f} ({recall.avg:.3f})\t'
+                      'F1 {f1.val:.3f} ({f1.avg:.3f})\t'
+                      'AUC {auc.val:.3f} ({auc.avg:.3f})'.format(epoch, i, len(val_loader),
+                                                                 batch_time=batch_time,
+                                                                 loss=losses,
+                                                                 top1=accuracies,
+                                                                 prec=precisions,
+                                                                 recall=recalls,
+                                                                 f1=fscores,
+                                                                 auc=auc_scores))
             i += 1
 
-        if n_label == 2:
-            print(' * Acc {top1.avg:.3f}'.format(top1=accuracies))
-            print(' * Precision {top1.avg:.3f}'.format(top1=precisions))
-            print(' * Recall {top1.avg:.3f}'.format(top1=recalls))
-            print(' * F1 {top1.avg:.3f}'.format(top1=fscores))
-            print(' * AUC {top1.avg:.3f}'.format(top1=auc_scores))
-        else:
-            print(' * Acc {top1.avg:.3f}'.format(top1=accuracies))
+        print(' * Acc {top1.avg:.3f}'.format(top1=accuracies))
+        print(' * Precision {top1.avg:.3f}'.format(top1=precisions))
+        print(' * Recall {top1.avg:.3f}'.format(top1=recalls))
+        print(' * F1 {top1.avg:.3f}'.format(top1=fscores))
+        print(' * AUC {top1.avg:.3f}'.format(top1=auc_scores))
     writer.add_scalar('Validate Loss', losses.avg, epoch)
     writer.add_scalar('Validate Acc', accuracies.avg, epoch)
     return accuracies.avg, precisions.avg, recalls.avg, fscores.avg, auc_scores.avg
@@ -283,7 +274,7 @@ if __name__ == '__main__':
                     required_fields = ['train_file', 'text_column', 'label_column', 'batch_size']
                     check_fields(required_fields, IO_session)
                     text_column = IO_session['text_column']
-                    label_column = IO_session['label_column']
+                    label_column = str2list(IO_session['label_column'])
                     train_iter, test_iter, TEXT = load_data(file_type, IO_session, is_train=is_train)
                     vocab = TEXT.vocab
                     # save vocab
@@ -396,6 +387,11 @@ if __name__ == '__main__':
                     criterion = FocalLoss(n_label).cuda()
                 else:
                     criterion = FocalLoss(n_label)
+            elif loss_type.lower() == 'binary_cross_entropy':
+                if torch.cuda.is_available():
+                    criterion = nn.BCEWithLogitsLoss().cuda()
+                else:
+                    criterion = nn.BCEWithLogitsLoss()
             else:
                 raise Exception('Other loss is not supported')
             print_progress('TRAIN coinfg Done')
@@ -418,7 +414,17 @@ if __name__ == '__main__':
         best_f1 = 0
         best_auc = 0
         for epoch in range(n_epoch):
-            train(train_iter, model, criterion, optimizer, epoch, record_step, text_column, label_column, n_label, writer)
+            train(train_iter,
+                  model,
+                  loss_type,
+                  criterion,
+                  optimizer,
+                  epoch,
+                  record_step,
+                  text_column,
+                  label_column,
+                  n_label,
+                  writer)
 
             acc1, precision, recall, f1, auc = validate(test_iter,
                                                         model,
