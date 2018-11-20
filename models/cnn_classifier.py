@@ -21,7 +21,7 @@ class EncoderCNN(nn.Module):
         filters = [int(x) for x in filters.split(',')]
         convs = []
         for filter in filters:
-            convs.append(nn.Conv2d(1, 1, (filter, filter_size)))
+            convs.append(nn.Conv2d(1, filter_size, (filter, embedding_size)))
         self.convs = nn.ModuleList(convs)
 
     def forward(self, input_var):
@@ -35,7 +35,6 @@ class EncoderCNN(nn.Module):
             x = x.squeeze(3)  # x: (batch, kernel_num, H_out)
             x = F.max_pool1d(x, x.size(2)).squeeze(2)
             outputs.append(x)
-
         out = torch.cat(outputs, -1)
         return out
 
@@ -66,7 +65,7 @@ class CNNTextClassifier(nn.Module):
                                   embedding=vocab.vectors)
 
         self.dropout = nn.Dropout(dropout_p)
-        self.predictor = nn.Linear(self.n_filters, n_label)
+        self.predictor = nn.Linear(self.n_filters*filter_size, n_label)
 
     def forward(self, x, lengths=None):
         out = self.encoder(x)
