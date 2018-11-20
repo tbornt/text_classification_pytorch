@@ -66,6 +66,7 @@ The main purpose of this experiment is to test different models, so feature engi
 | 模型(multi-label problem)       |   word embedding   | 参数    |  kaggle score  |
 | :--------: |:----:| :----:   | :----: |
 | Basic Bi-GRU 2 hidden layer Attention(general)         |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9801    |
+| DPCNN        |glove.6b.100d |   same as described in paper    |   0.9657    |
 
 ### Stanford Sentiment Treebank
 
