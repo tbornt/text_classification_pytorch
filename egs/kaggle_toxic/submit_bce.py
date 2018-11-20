@@ -26,7 +26,7 @@ if __name__ == '__main__':
     test_df = pd.read_csv(test_file, usecols=['id'])
 
     decode_file = args.decode_result
-    decode_df = pd.read_csv(decode_file, ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'])
+    decode_df = pd.read_csv(decode_file, names=['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'])
 
     res = pd.concat([test_df['id'], decode_df[['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']]], axis=1)
     res.to_csv(args.output, index=False)
