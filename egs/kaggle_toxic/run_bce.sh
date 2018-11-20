@@ -9,16 +9,12 @@ elif [ $1 == "cnn" ]; then
     python -u main.py -c egs/kaggle_toxic/configs/bce_cfgs/cnn.decode.config
 
 elif [ $1 == "dpcnn" ]; then
-    python -u main.py -c egs/kaggle_toxic/configs/dpcnn_cfgs/identityhate.train.config
-    python -u main.py -c egs/kaggle_toxic/configs/dpcnn_cfgs/identityhate.decode.config
+    python -u main.py -c egs/kaggle_toxic/configs/bce_cfgs/dpcnn.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/bce_cfgs/dpcnn.decode.config
 
 elif [ $1 == "rcnn" ]; then
-    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/identityhate.train.config
-    python -u main.py -c egs/kaggle_toxic/configs/rcnn_cfgs/identityhate.decode.config
-
-elif [ $1 == "transformer" ]; then
-    python -u main.py -c egs/kaggle_toxic/configs/transformer_cfgs/identityhate.train.config
-    python -u main.py -c egs/kaggle_toxic/configs/transformer_cfgs/identityhate.decode.config
+    python -u main.py -c egs/kaggle_toxic/configs/bce_cfgs/rcnn.train.config
+    python -u main.py -c egs/kaggle_toxic/configs/bce_cfgs/rcnn.decode.config
 fi
 
 python egs/kaggle_toxic/submit.py -t data/test.csv --decode_result egs/kaggle_toxic/result/bce_model_result.csv \
