@@ -19,22 +19,17 @@ def get_class(x):
     return np.array(res)
 
 
-def hamming_score(y_true, y_pred, normalize=True, sample_weight=None):
-    acc_list = []
+def multilabel_score(y_true, y_pred):
+    score = 0.0
     for i in range(y_true.shape[0]):
-        set_true = set( np.where(y_true[i])[0] )
-        set_pred = set( np.where(y_pred[i])[0] )
-        #print('\nset_true: {0}'.format(set_true))
-        #print('set_pred: {0}'.format(set_pred))
-        tmp_a = None
-        if len(set_true) == 0 and len(set_pred) == 0:
-            tmp_a = 1
-        else:
-            tmp_a = len(set_true.intersection(set_pred))/\
-                    float( len(set_true.union(set_pred)) )
-        #print('tmp_a: {0}'.format(tmp_a))
-        acc_list.append(tmp_a)
-    return np.mean(acc_list)
+        for j in range(y_true.shape[1]):
+            if y_true[i][j] == y_pred[i][j]:
+                if y_true[i][j] == 0:
+                    score += 1
+                if y_true[i][j] == 1:
+                    score += 100
+    score /= (y_true.shape[0] * y_true.shape[1])
+    return score
 
 
 def class_eval(prediction, target, pred_type):
@@ -52,9 +47,8 @@ def class_eval(prediction, target, pred_type):
         accuracy = metrics.accuracy_score(target_label, pred_label)
     else:
         if pred_type == 'multi_label':
-            get_class_vec = np.vectorize(get_class)
             pred_label = get_class(prediction)
-            accuracy = hamming_score(target, pred_label)
+            accuracy = multilabel_score(target, pred_label)
             precision = 0.0
             recall = 0.0
             fscore = 0.0
