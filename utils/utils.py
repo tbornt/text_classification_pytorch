@@ -6,12 +6,43 @@ import numpy as np
 from sklearn import metrics
 
 
-def class_eval(prediction, target):
-    prediction = np.exp(prediction.cpu().numpy())
+def get_class(x):
+    res = []
+    for row in x:
+        row_res = []
+        for col in row:
+            if col >= 0.5:
+                row_res.append(1)
+            else:
+                row_res.append(0)
+        res.append(row_res)
+    return np.array(res)
+
+
+def hamming_score(y_true, y_pred, normalize=True, sample_weight=None):
+    acc_list = []
+    for i in range(y_true.shape[0]):
+        set_true = set( np.where(y_true[i])[0] )
+        set_pred = set( np.where(y_pred[i])[0] )
+        #print('\nset_true: {0}'.format(set_true))
+        #print('set_pred: {0}'.format(set_pred))
+        tmp_a = None
+        if len(set_true) == 0 and len(set_pred) == 0:
+            tmp_a = 1
+        else:
+            tmp_a = len(set_true.intersection(set_pred))/\
+                    float( len(set_true.union(set_pred)) )
+        #print('tmp_a: {0}'.format(tmp_a))
+        acc_list.append(tmp_a)
+    return np.mean(acc_list)
+
+
+def class_eval(prediction, target, pred_type):
+    prediction = prediction.cpu().numpy()
     target = target.cpu().numpy()
-    pred_label = np.argmax(prediction, axis=1)
-    target_label = np.squeeze(target)
     if prediction.shape[1] == 2:
+        pred_label = np.argmax(prediction, axis=1)
+        target_label = np.squeeze(target)
         precision, recall, fscore, _ = metrics.precision_recall_fscore_support(
             target_label, pred_label, average='binary')
         try:
@@ -20,7 +51,21 @@ def class_eval(prediction, target):
             auc_score = 0.0
         accuracy = metrics.accuracy_score(target_label, pred_label)
     else:
-        raise NotImplementedError
+        if pred_type == 'multi_label':
+            get_class_vec = np.vectorize(get_class)
+            pred_label = get_class(prediction)
+            accuracy = hamming_score(target, pred_label)
+            precision = 0.0
+            recall = 0.0
+            fscore = 0.0
+            auc_score = 0.0
+        elif pred_type == 'multi_class':
+            pred_label = np.argmax(prediction, axis=1)
+            target_label = np.argmax(prediction, axis=1)
+            precision, recall, fscore, _ = metrics.precision_recall_fscore_support(
+                target_label, pred_label, average='binary')
+            auc_score = 0.0
+            accuracy = metrics.accuracy_score(target_label, pred_label)
     return accuracy, precision, recall, fscore, auc_score
 
 

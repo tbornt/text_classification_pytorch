@@ -9,6 +9,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
+from torch.nn import functional as F
 from tensorboardX import SummaryWriter
 from sklearn.utils.extmath import softmax
 from utils.utils import check_fields, print_progress, AverageMeter, class_eval, save_checkpoint, \
@@ -71,6 +72,8 @@ def train(train_loader, model, loss_type, criterion, optimizer, epoch, print_fre
                 label = label.unsqueeze(1)
                 labels.append(label)
             labels = torch.cat(labels, 1).float()
+        else:
+            raise Exception('%s loss is not supported' % loss_type.lower())
 
         if torch.cuda.is_available():
             text = text.cuda()
@@ -80,14 +83,21 @@ def train(train_loader, model, loss_type, criterion, optimizer, epoch, print_fre
         output = model(text, lengths)
         loss = criterion(output, labels)
 
+        if loss_type.lower() in ['focal', 'cross_entropy']:
+            output = F.softmax(output)
+            pred_type = 'multi_class'
+        if loss_type.lower() in ['binary_cross_entropy']:
+            output = F.sigmoid(output)
+            pred_type= 'multi_label'
+
         # measure accuracy and record loss
         acc, precision, recall, fscore, auc_score = \
-            class_eval(output.data.cpu(), label)
-        accuracies.update(acc, label.size(0))
-        precisions.update(precision, label.size(0))
-        recalls.update(recall, label.size(0))
-        fscores.update(fscore, label.size(0))
-        auc_scores.update(auc_score, label.size(0))
+            class_eval(output.data.cpu(), labels, pred_type)
+        accuracies.update(acc, labels.size(0))
+        precisions.update(precision, labels.size(0))
+        recalls.update(recall, labels.size(0))
+        fscores.update(fscore, labels.size(0))
+        auc_scores.update(auc_score, labels.size(0))
 
         losses.update(loss.item(), text.size(0))
 
@@ -159,6 +169,8 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
                     label = label.unsqueeze(1)
                     labels.append(label)
                 labels = torch.cat(labels, 1).float()
+            else:
+                raise Exception('%s loss is not supported' % loss_type.lower())
 
             if torch.cuda.is_available():
                 text = text.cuda()
@@ -168,14 +180,21 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
             output = model(text, lengths)
             loss = criterion(output, labels)
 
+            if loss_type.lower() in ['focal', 'cross_entropy']:
+                output = F.softmax(output)
+                pred_type = 'multi_class'
+            if loss_type.lower() in ['binary_cross_entropy']:
+                output = F.sigmoid(output)
+                pred_type = 'multi_label'
+
             # measure accuracy and record loss
             acc, precision, recall, fscore, auc_score =\
-                class_eval(output.data.cpu(), label)
-            accuracies.update(acc, label.size(0))
-            precisions.update(precision, label.size(0))
-            recalls.update(recall, label.size(0))
-            fscores.update(fscore, label.size(0))
-            auc_scores.update(auc_score, label.size(0))
+                class_eval(output.data.cpu(), labels, pred_type)
+            accuracies.update(acc, labels.size(0))
+            precisions.update(precision, labels.size(0))
+            recalls.update(recall, labels.size(0))
+            fscores.update(fscore, labels.size(0))
+            auc_scores.update(auc_score, labels.size(0))
 
             losses.update(loss.item(), text.size(0))
 
@@ -393,7 +412,7 @@ if __name__ == '__main__':
                 else:
                     criterion = nn.BCEWithLogitsLoss()
             else:
-                raise Exception('Other loss is not supported')
+                raise Exception('%s loss is not supported' % loss_type.lower())
             print_progress('TRAIN coinfg Done')
         else:
             raise Exception('TRAIN should be configured in config file')
