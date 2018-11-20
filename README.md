@@ -34,7 +34,7 @@ First install python3 and pytorch4.0. Then run `pip3 install -r requirements.txt
 
 ### Toxic Comment Classification Challenge
 
-First We apply the text classification models to [Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge). There are six fields to be predicted in this challenge. So we create six individual models to predict each field.
+First We apply the text classification models to [Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge). There are six fields to be predicted in this challenge. So we create six individual models to predict each field. Or treat it as a common multi-label problem.
 The main purpose of this experiment is to test different models, so feature engineering is not included.
 
 #### Steps
@@ -45,7 +45,7 @@ The main purpose of this experiment is to test different models, so feature engi
 
 #### Some Results
 
-| 模型       |   word embedding   | 参数    |  kaggle score  |
+| 模型(6 models)       |   word embedding   | 参数    |  kaggle score  |
 | :--------: |:----:| :----:   | :----: |
 | Basic Bi-GRU        |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0      |   0.9718    |
 | Basic Bi-GRU        |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9771    |
@@ -61,6 +61,11 @@ The main purpose of this experiment is to test different models, so feature engi
 | DPCNN        |glove.6b.100d |   same as described in paper    |   0.9773    |
 | RCNN        |glove.6b.100d |   bi-gru + max_pooling    |   0.9797    |
 | RCNN        |glove.6b.100d |   bi-gru + 2 layer + max_pooling    |   0.9789    |
+
+
+| 模型(multi-label problem)       |   word embedding   | 参数    |  kaggle score  |
+| :--------: |:----:| :----:   | :----: |
+| Basic Bi-GRU 2 hidden layer Attention(general)         |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9801    |
 
 ### Stanford Sentiment Treebank
 
