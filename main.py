@@ -11,10 +11,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.nn import functional as F
 from tensorboardX import SummaryWriter
-from sklearn.utils.extmath import softmax
 from utils.utils import check_fields, print_progress, AverageMeter, class_eval, save_checkpoint, \
     load_checkpoint
-from utils.utils import accuracy as acc_func, str2list
+from utils.utils import str2list
 from utils.focalloss import FocalLoss
 from utils.dataloader import load_data
 from models.rnn_classifier import RNNTextClassifier
