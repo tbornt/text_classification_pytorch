@@ -17,7 +17,7 @@ elif [ $1 == "rcnn" ]; then
     python -u main.py -c egs/kaggle_toxic/configs/bce_cfgs/rcnn.decode.config
 fi
 
-python egs/kaggle_toxic/submit.py -t data/test.csv --decode_result egs/kaggle_toxic/result/bce_model_result.csv \
+python egs/kaggle_toxic/submit_bce.py -t data/test.csv --decode_result egs/kaggle_toxic/result/bce_model_result.csv \
 --output egs/kaggle_toxic/submission.csv
 
 end=$(date +%s)
