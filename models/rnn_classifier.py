@@ -159,7 +159,7 @@ class RNNTextClassifier(nn.Module):
                                   embedding=vocab.vectors,
                                   update_embedding=update_embedding)
         self.predictor = nn.Linear(output_size, n_label)
-        if self.attention_type == 'general':
+        if self.attention and self.attention_type == 'general':
             self.att_W = nn.Linear(output_size, output_size)
 
     def attention_layer(self, output, final_state):
