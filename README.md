@@ -67,6 +67,7 @@ The main purpose of this experiment is to test different models, so feature engi
 | :--------: |:----:| :----:   | :----: |
 | Basic Bi-GRU        |glove.6b.50d |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9764    |
 | Basic Bi-GRU        |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9756    |
+| Basic Bi-GRU        |glove.6b.300d |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9788    |
 | Basic Bi-GRU 2 hidden layer Attention(general)         |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3      |   0.9801    |
 | TextCNN        |glove.6b.300d |   same as described in paper    |   0.9677    |
 | TextCNN        |glove.6b.300d |   filters=2,3,4,5 filter_size=300    |   0.9707    |
