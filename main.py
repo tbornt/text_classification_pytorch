@@ -481,7 +481,7 @@ if __name__ == '__main__':
             best_auc = max(auc, best_auc)
 
             save_checkpoint({
-                'epoch': epoch + 1,
+                'epoch': epoch,
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
                 'optimizer': optimizer.state_dict()
