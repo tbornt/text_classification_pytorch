@@ -260,7 +260,7 @@ def decode(decode_iter, model, output_file, text_column, output_type, task_type)
                     output = F.softmax(output)
                     output = output[unsort_idx]
                     for prob in output:
-                        prob = [str(p) for p in prob]
+                        prob = [str(p.item()) for p in prob]
                         output_file.write(','.join(prob)+'\n')
             elif task_type == 'multi_label':
                 if output_type == 'label':
