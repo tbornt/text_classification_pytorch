@@ -54,6 +54,7 @@ The main purpose of this experiment is to test different models, so feature engi
 | Basic Bi-GRU+2 hidden layer       |glove.6b.100d |hidden_size:200 n_layer:2 input_dropout:0.3 dropout:0.5      |   0.9793    |
 | Basic Bi-GRU+FocalLoss        |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3 FocalLoss     |   0.9755    |
 | Basic Bi-GRU+Attention(general)       |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3     |   0.9773    |
+| Basic Bi-GRU+Attention(general)       |glove.6b.300d |hidden_size:200 n_layer:2 input_dropout:0.3     |   0.9791    |
 | Basic Bi-GRU+Attention(dot)       |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3     |   0.9756    |
 | Basic Bi-GRU+Attention(dot)+FocalLoss        |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0.3 attention FocalLoss     |   0.9763    |
 | Basic Bi-LSTM       |glove.6b.100d |hidden_size:200 n_layer:1 input_dropout:0      |   0.9710    |
