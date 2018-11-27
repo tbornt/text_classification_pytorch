@@ -375,9 +375,9 @@ if __name__ == '__main__':
                     criterion = nn.CrossEntropyLoss()
             elif loss_type.lower() == 'focal':
                 if torch.cuda.is_available():
-                    criterion = FocalLoss(n_label).cuda()
+                    criterion = FocalLoss(n_label, alpha=[0.25, 0.75]).cuda()
                 else:
-                    criterion = FocalLoss(n_label)
+                    criterion = FocalLoss(n_label, alpha=[0.25, 0.75])
             elif loss_type.lower() == 'binary_cross_entropy':
                 if torch.cuda.is_available():
                     criterion = nn.BCEWithLogitsLoss().cuda()
