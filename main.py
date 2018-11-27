@@ -204,11 +204,12 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
         for thresh in np.arange(0.1, 0.501, 0.01):
             thresh = np.round(thresh, 2)
             score = metrics.f1_score(true, (pred > thresh).astype(int))
+            print('F1 %f at %f' % (score, thresh))
             if score > best_score:
                 best_thresh = thresh
                 best_score = score
 
-        print(' * F1 {:.3f}'.format(best_score))
+        print('Best * F1 {:.3f}'.format(best_score))
 
     return best_score, best_thresh
 
