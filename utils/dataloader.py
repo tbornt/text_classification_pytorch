@@ -72,8 +72,12 @@ class SeriesExample(Example):
 
 
 def tokenizer(text):
-    text = " ".join(re.findall("[a-zA-Z]+", text))
-    return text.split(' ')
+    text = re.findall(r"[\w']+|[.,!?;]", text)
+    if len(text) == 0:
+        res = ['empty']
+    else:
+        res = text
+    return res
 
 
 def load_data(type, session, **kwargs):
@@ -106,7 +110,7 @@ def load_csv_data(session, kwargs):
         else:
             test_df = None
 
-        TEXT = data.Field(sequential=True, tokenize=tokenizer, lower=True, include_lengths=True, fix_length=fix_length)
+        TEXT = data.Field(sequential=True, tokenize=tokenizer, include_lengths=True, fix_length=fix_length)
         LABEL = data.LabelField(sequential=False, use_vocab=False)
         fields = {}
         for column in text_column:
