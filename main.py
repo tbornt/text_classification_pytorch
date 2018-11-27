@@ -22,6 +22,7 @@ from models.dpcnn_classifier import DPCNNTextClassifier
 from models.rcnn_classifier import RCNNTextClassifier
 from models.multiheadattention_classifier import MultiHeadAttention_classifier
 import sklearn.metrics as metrics
+import pandas as pd
 
 
 import warnings
@@ -214,16 +215,12 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
     return best_score, best_thresh
 
 
-def decode(decode_iter, model, output_file, text_column, output_type, task_type):
+def decode(decode_iter, model, thresh):
     model.eval()
-    output_dir = os.path.dirname(output_file)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    output_file = open(output_file, 'w')
+    labels = []
     with torch.no_grad():
         for decode_item in decode_iter:
-            text, lengths = getattr(decode_item, text_column)
-            text.transpose_(0, 1)
+            text, lengths = getattr(decode_item, 'question_text')
             sort_idx = np.argsort(-lengths)
             unsort_idx = np.argsort(sort_idx)
 
@@ -234,35 +231,10 @@ def decode(decode_iter, model, output_file, text_column, output_type, task_type)
                 text = text.cuda()
 
             output = model(text, lengths)
-            if task_type == 'multi_class':
-                if output_type == 'label':
-                    _, pred = output.max(1)
-                    # return to origin order
-                    pred = pred[unsort_idx]
-                    for label in pred:
-                        output_file.write('%d\n' % label.item())
-                elif output_type == 'prob':
-                    output = F.softmax(output)
-                    output = output[unsort_idx]
-                    for prob in output:
-                        prob = [str(p.item()) for p in prob]
-                        output_file.write(','.join(prob)+'\n')
-            elif task_type == 'multi_label':
-                if output_type == 'label':
-                    output = F.sigmoid(output)
-                    output = output[unsort_idx]
-                    for prob in output:
-                        prob = [str(1) if p.item() >= 0.5 else str(0) for p in prob]
-                        output_file.write(','.join(prob)+'\n')
-                elif output_type == 'prob':
-                    output = F.sigmoid(output)
-                    output = output[unsort_idx]
-                    for prob in output:
-                        prob = [str(p.item()) for p in prob]
-                        output_file.write(','.join(prob)+'\n')
-            else:
-                raise Exception('task type % s not allowed' % task_type)
-    output_file.close()
+            output = output[unsort_idx]
+            labels.extend(np.asarray(output.data.cpu()).tolist())
+    pred = (np.array(labels)[:, 1] > thresh).astype(int)
+    result_df = pd.DataFrame({'prediction': pred})
 
 if __name__ == '__main__':
     args = arg_parser.parse_args()
@@ -430,6 +402,7 @@ if __name__ == '__main__':
     if is_train:
         best_score = 0.0
         best_thresh = 0.0
+        best_model = model.state_dict()
         for epoch in range(n_epoch):
             train(train_iter,
                   model,
@@ -449,6 +422,8 @@ if __name__ == '__main__':
             if is_best:
                 best_score = score
                 best_thresh = thresh
+                best_model = model.state_dict()
             print('best_score: %f, best_thresh: %f' % (best_score, best_thresh))
-    else:
-        decode(decode_iter, model, output_file, text_column, output_type, task_type)
+
+    model.load_state_dict(best_model)
+    decode(test_iter, model, best_thresh)
