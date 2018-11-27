@@ -21,6 +21,7 @@ from models.cnn_classifier import CNNTextClassifier
 from models.dpcnn_classifier import DPCNNTextClassifier
 from models.rcnn_classifier import RCNNTextClassifier
 from models.multiheadattention_classifier import MultiHeadAttention_classifier
+import sklearn.metrics as metrics
 
 
 import warnings
@@ -145,6 +146,8 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
     # switch to evaluate mode
     model.eval()
 
+    true_labels = []
+    pred_labels = []
     with torch.no_grad():
         end = time.time()
         i = 0
@@ -181,19 +184,11 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
 
             if loss_type.lower() in ['focal', 'cross_entropy']:
                 output = F.softmax(output)
-                pred_type = 'multi_class'
             if loss_type.lower() in ['binary_cross_entropy']:
                 output = F.sigmoid(output)
-                pred_type = 'multi_label'
 
-            # measure accuracy and record loss
-            acc, precision, recall, fscore, auc_score =\
-                class_eval(output.data.cpu(), labels, pred_type)
-            accuracies.update(acc, labels.size(0))
-            precisions.update(precision, labels.size(0))
-            recalls.update(recall, labels.size(0))
-            fscores.update(fscore, labels.size(0))
-            auc_scores.update(auc_score, labels.size(0))
+            pred_labels.extend(np.asarray(output.data.cpu()).tolist())
+            true_labels.extend(np.asarray(labels.cpu()).tolist())
 
             losses.update(loss.item(), text.size(0))
 
@@ -201,32 +196,21 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % print_freq == 0:
-                print('Epoch: [{0}][{1}/{2}]\t'
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                      'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                      'Precision {prec.val:.3f} ({prec.avg:.3f})\t'
-                      'Recall {recall.val:.3f} ({recall.avg:.3f})\t'
-                      'F1 {f1.val:.3f} ({f1.avg:.3f})\t'
-                      'AUC {auc.val:.3f} ({auc.avg:.3f})'.format(epoch, i, len(val_loader),
-                                                                 batch_time=batch_time,
-                                                                 loss=losses,
-                                                                 top1=accuracies,
-                                                                 prec=precisions,
-                                                                 recall=recalls,
-                                                                 f1=fscores,
-                                                                 auc=auc_scores))
-            i += 1
+        pred = np.array(pred_labels)[:, 1]
+        true = np.array(true_labels)
 
-        print(' * Acc {top1.avg:.3f}'.format(top1=accuracies))
-        print(' * Precision {top1.avg:.3f}'.format(top1=precisions))
-        print(' * Recall {top1.avg:.3f}'.format(top1=recalls))
-        print(' * F1 {top1.avg:.3f}'.format(top1=fscores))
-        print(' * AUC {top1.avg:.3f}'.format(top1=auc_scores))
-    writer.add_scalar('Validate Loss', losses.avg, epoch)
-    writer.add_scalar('Validate Acc', accuracies.avg, epoch)
-    return accuracies.avg, precisions.avg, recalls.avg, fscores.avg, auc_scores.avg
+        best_thresh = 0.5
+        best_score = 0.0
+        for thresh in np.arange(0.1, 0.501, 0.01):
+            thresh = np.round(thresh, 2)
+            score = metrics.f1_score(true, (pred > thresh).astype(int))
+            if score > best_score:
+                best_thresh = thresh
+                best_score = score
+
+        print(' * F1 {:.3f}'.format(best_score))
+
+    return best_score, best_thresh
 
 
 def decode(decode_iter, model, output_file, text_column, output_type, task_type):
@@ -443,12 +427,10 @@ if __name__ == '__main__':
             raise Exception('DECODE should be configured in config file')
 
     if is_train:
-        best_acc1 = 0
-        best_precision = 0
-        best_recall = 0
-        best_f1 = 0
-        best_auc = 0
+        best_score = 0.0
+        best_thresh = 0.0
         for epoch in range(n_epoch):
+            """
             train(train_iter,
                   model,
                   loss_type,
@@ -460,31 +442,14 @@ if __name__ == '__main__':
                   label_column,
                   n_label,
                   writer)
+            """
 
-            acc1, precision, recall, f1, auc = validate(test_iter,
-                                                        model,
-                                                        criterion,
-                                                        record_step,
-                                                        text_column,
-                                                        label_column,
-                                                        n_label,
-                                                        writer)
-            if n_label == 2:
-                is_best = auc > best_auc
-            else:
-                is_best = acc1 > best_acc1
+            score, thresh = validate(test_iter, model, criterion, record_step, text_column, label_column, n_label, writer)
 
-            best_acc1 = max(acc1, best_acc1)
-            best_precision = max(precision, best_precision)
-            best_recall = max(recall, best_recall)
-            best_f1 = max(f1, best_f1)
-            best_auc = max(auc, best_auc)
-
-            save_checkpoint({
-                'epoch': epoch,
-                'state_dict': model.state_dict(),
-                'best_acc1': best_acc1,
-                'optimizer': optimizer.state_dict()
-            }, is_best, output_dir)
+            is_best = score > best_score
+            if is_best:
+                best_score = score
+                best_thresh = thresh
+            print('best_score: %f, best_thresh: %f' % (best_score, best_thresh))
     else:
         decode(decode_iter, model, output_file, text_column, output_type, task_type)
