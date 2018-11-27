@@ -430,7 +430,6 @@ if __name__ == '__main__':
         best_score = 0.0
         best_thresh = 0.0
         for epoch in range(n_epoch):
-            """
             train(train_iter,
                   model,
                   loss_type,
@@ -442,7 +441,6 @@ if __name__ == '__main__':
                   label_column,
                   n_label,
                   writer)
-            """
 
             score, thresh = validate(test_iter, model, criterion, record_step, text_column, label_column, n_label, writer)
 
