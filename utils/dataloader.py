@@ -104,7 +104,7 @@ def load_csv_data(session, kwargs):
         sep = session.get('sep', ',')
         train_df = pd.read_csv(train_file, usecols=use_cols, sep=sep)
         if val_ratio > 0 and not validate_file:
-            train_df, test_df = train_test_split(train_df, test_size=val_ratio)
+            train_df, test_df = train_test_split(train_df, test_size=val_ratio, random_state=2018)
         elif validate_file:
             test_df = pd.read_csv(validate_file, usecols=use_cols, sep=sep)
         else:
