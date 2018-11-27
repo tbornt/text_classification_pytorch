@@ -158,7 +158,7 @@ class RNNTextClassifier(nn.Module):
                                   bidirectional=bidirectional,
                                   embedding=vocab.vectors,
                                   update_embedding=update_embedding)
-        self.predictor = nn.Linear(output_size, n_label)
+        self.predictor = nn.Linear(output_size * 3, n_label)
         if self.attention and self.attention_type == 'general':
             self.att_W = nn.Linear(output_size, output_size)
 
@@ -208,9 +208,14 @@ class RNNTextClassifier(nn.Module):
             idx = idx.cuda(output.data.get_device())
         last_output = output.gather(
             time_dimension, Variable(idx)).squeeze(time_dimension)
+        maxpool_output = output.permute(0, 2, 1)
+        maxpool_output = F.max_pool1d(maxpool_output, maxpool_output.size(2)).squeeze(2)
+        avgpool_output = output.permute(0, 2, 1)
+        avgpool_output = F.avg_pool1d(avgpool_output, avgpool_output.size(2)).squeeze(2)
         if not self.attention:
-            pred = self.predictor(last_output)
+            out = torch.cat([last_output, maxpool_output, avgpool_output], 1)
         else:
             attn_out = self.attention_layer(output, last_output)
-            pred = self.predictor(attn_out)
+            out = torch.cat([attn_out, maxpool_output, avgpool_output], 1)
+        pred = self.predictor(out)
         return pred
