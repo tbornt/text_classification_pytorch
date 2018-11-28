@@ -425,6 +425,3 @@ if __name__ == '__main__':
                 best_thresh = thresh
                 best_model = model.state_dict()
             print('best_score: %f, best_thresh: %f' % (best_score, best_thresh))
-
-    model.load_state_dict(best_model)
-    decode(test_iter, model, best_thresh)
