@@ -202,7 +202,7 @@ def validate(val_loader, model, criterion, print_freq, text_column, label_column
 
         best_thresh = 0.5
         best_score = 0.0
-        for thresh in np.arange(0.1, 0.501, 0.01):
+        for thresh in np.arange(0.1, 1.01, 0.01):
             thresh = np.round(thresh, 2)
             score = metrics.f1_score(true, (pred > thresh).astype(int))
             print('F1 %f at %f' % (score, thresh))
